@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { v4 as uuid } from 'uuid'
 import type { Snippet } from '../../../shared/types'
 import { useApp } from '../state'
@@ -7,6 +7,15 @@ import { IconEdit, IconPlay, IconPlus, IconSnippet, IconTrash } from '../icons'
 export default function SnippetsPanel(): JSX.Element {
   const { snippets, refreshSnippets, sendToActiveTerminal, activeSessionId, toast } = useApp()
   const [editing, setEditing] = useState<Snippet | null>(null)
+
+  useEffect(() => {
+    if (!editing) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setEditing(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [editing])
 
   const run = (s: Snippet): void => {
     if (!activeSessionId) {
@@ -64,7 +73,7 @@ export default function SnippetsPanel(): JSX.Element {
         ))}
       </div>
       {editing && (
-        <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setEditing(null)}>
+        <div className="modal-backdrop">
           <div className="modal">
             <div className="modal-header">{editing.name ? `Edit ${editing.name}` : 'New snippet'}</div>
             <div className="modal-body">

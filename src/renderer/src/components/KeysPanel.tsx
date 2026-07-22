@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { useApp } from '../state'
 import { IconCopy, IconKey, IconPlus, IconTrash } from '../icons'
 
@@ -8,6 +8,15 @@ export default function KeysPanel(): JSX.Element {
   const [name, setName] = useState('')
   const [type, setType] = useState<'ed25519' | 'rsa'>('ed25519')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!showNew) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setShowNew(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showNew])
 
   const generate = async (): Promise<void> => {
     if (!name.trim()) return
@@ -87,7 +96,7 @@ export default function KeysPanel(): JSX.Element {
         ))}
       </div>
       {showNew && (
-        <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setShowNew(false)}>
+        <div className="modal-backdrop">
           <div className="modal" style={{ width: 420 }}>
             <div className="modal-header">Generate SSH key</div>
             <div className="modal-body">

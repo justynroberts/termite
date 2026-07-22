@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { v4 as uuid } from 'uuid'
 import type { PortForward } from '../../../shared/types'
 import { useApp } from '../state'
@@ -7,6 +7,15 @@ import { IconEdit, IconForward, IconPlay, IconPlus, IconStop, IconTrash } from '
 export default function ForwardsPanel(): JSX.Element {
   const { forwards, activeForwards, hosts, refreshForwards, toast } = useApp()
   const [editing, setEditing] = useState<PortForward | null>(null)
+
+  useEffect(() => {
+    if (!editing) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setEditing(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [editing])
 
   const start = async (f: PortForward): Promise<void> => {
     try {
@@ -94,7 +103,7 @@ export default function ForwardsPanel(): JSX.Element {
         })}
       </div>
       {editing && (
-        <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setEditing(null)}>
+        <div className="modal-backdrop">
           <div className="modal" style={{ width: 460 }}>
             <div className="modal-header">Port forward</div>
             <div className="modal-body">

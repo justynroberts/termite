@@ -28,7 +28,8 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 | Next / previous tab | `Ctrl + Tab` / `Ctrl + Shift + Tab` |
 
 **Hosts & auth**
-- Host vault with groups, tags, colors, and search
+- Host vault with groups, tags, colors, and search — double-click to connect,
+  **right-click to edit**, or use the always-visible row buttons (terminal / SFTP / edit / delete)
 - Password, SSH key, and SSH agent auth (Windows OpenSSH agent + `SSH_AUTH_SOCK`)
 - Jump host (bastion) chaining
 - Import hosts from `~/.ssh/config`

@@ -278,8 +278,8 @@ body {
 .host-item .host-info { flex: 1; min-width: 0; }
 .host-item .host-label { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .host-item .host-addr { font-size: 11px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.host-item .host-actions { display: none; gap: 2px; }
-.host-item:hover .host-actions { display: flex; }
+.host-item .host-actions { display: flex; gap: 2px; opacity: 0.45; transition: opacity 0.12s; }
+.host-item:hover .host-actions { opacity: 1; }
 
 .icon-btn {
   border: none; background: transparent; color: var(--text-2);
@@ -483,8 +483,8 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 .panel-list-item .info { flex: 1; min-width: 0; }
 .panel-list-item .name { font-weight: 500; }
 .panel-list-item .meta { font-size: 11px; color: var(--text-2); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.panel-list-item .actions { display: none; gap: 2px; }
-.panel-list-item:hover .actions { display: flex; }
+.panel-list-item .actions { display: flex; gap: 2px; opacity: 0.45; transition: opacity 0.12s; }
+.panel-list-item:hover .actions { opacity: 1; }
 
 .badge {
   font-size: 10px; padding: 1px 7px; border-radius: 10px;

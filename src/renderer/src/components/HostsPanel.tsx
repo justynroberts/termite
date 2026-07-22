@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from 'react'
+import { useEffect, useMemo, useState, type JSX } from 'react'
 import { v4 as uuid } from 'uuid'
 import type { Host } from '../../../shared/types'
 import { useApp } from '../state'
@@ -93,7 +93,11 @@ export default function HostsPanel(): JSX.Element {
                 className="host-item"
                 style={{ ['--host-color' as string]: h.color }}
                 onDoubleClick={() => openTerminal(h)}
-                title={`${h.username}@${h.hostname}:${h.port}\nDouble-click to connect`}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  setEditing(h)
+                }}
+                title={`${h.username}@${h.hostname}:${h.port}\nDouble-click to connect · right-click to edit`}
               >
                 <span className="host-dot" />
                 <div className="host-info">
@@ -152,6 +156,15 @@ function HostEditor({
   const set = <K extends keyof Host>(k: K, v: Host[K]): void => setForm((f) => ({ ...f, [k]: v }))
   const isNew = !allHosts.some((h) => h.id === host.id)
 
+  // Esc closes; clicking the backdrop no longer discards edits
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   const save = async (): Promise<void> => {
     if (!form.hostname) return
     const label = form.label || `${form.username || 'user'}@${form.hostname}`
@@ -160,7 +173,7 @@ function HostEditor({
   }
 
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop">
       <div className="modal">
         <div className="modal-header">{isNew ? 'New host' : `Edit ${host.label}`}</div>
         <div className="modal-body">

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-07-22
+
+### Fixed
+- **Host editing was hard to find and easy to lose**: host/key/snippet/forward action buttons
+  are now always visible (brighten on hover) instead of hidden until hover; right-click a host
+  to open its editor directly; editor modals no longer close (discarding your changes) when
+  clicking outside — use Cancel, Save, or `Esc`.
+
 ## 0.3.0 — 2026-07-22
 
 ### Added
