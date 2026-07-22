@@ -5,11 +5,11 @@ import { useApp } from '../state'
 import { IconEdit, IconPlay, IconPlus, IconSnippet, IconTrash } from '../icons'
 
 export default function SnippetsPanel(): JSX.Element {
-  const { snippets, refreshSnippets, sendToActiveTerminal, activeTab, toast } = useApp()
+  const { snippets, refreshSnippets, sendToActiveTerminal, activeSessionId, toast } = useApp()
   const [editing, setEditing] = useState<Snippet | null>(null)
 
   const run = (s: Snippet): void => {
-    if (activeTab?.kind !== 'terminal' || !activeTab.sessionId) {
+    if (!activeSessionId) {
       toast('Open a terminal tab first', 'warn')
       return
     }

@@ -4,10 +4,10 @@
   --bg-1: #131a23;
   --bg-2: #1a222e;
   --bg-3: #222c3a;
-  --border: #2a3646;
-  --text-0: #e6edf3;
-  --text-1: #9fb0c3;
-  --text-2: #64748b;
+  --border: #32405494;
+  --text-0: #eaf1f8;
+  --text-1: #b3c2d4;
+  --text-2: #8496ab;
   --accent: #34d399;
   --accent-dim: #10b98122;
   --danger: #f87171;
@@ -23,10 +23,10 @@
   --bg-1: #ffffff;
   --bg-2: #eef1f5;
   --bg-3: #e2e7ee;
-  --border: #d0d7e2;
-  --text-0: #1f2733;
-  --text-1: #4b5768;
-  --text-2: #8895a7;
+  --border: #c3ccd9;
+  --text-0: #16202c;
+  --text-1: #3d4a5c;
+  --text-2: #66758a;
   --accent: #059669;
   --accent-dim: #05966918;
   --danger: #dc2626;
@@ -41,18 +41,18 @@
 
 /* ---------- glass mode (Win11 Mica/Acrylic, macOS vibrancy) ---------- */
 :root[data-glass='true'] {
-  --bg-0: rgba(13, 17, 23, 0.76);
-  --bg-1: rgba(19, 26, 35, 0.68);
-  --bg-2: rgba(30, 40, 54, 0.76);
-  --bg-3: rgba(40, 52, 68, 0.84);
-  --border: rgba(90, 110, 138, 0.34);
+  --bg-0: rgba(13, 17, 23, 0.86);
+  --bg-1: rgba(19, 26, 35, 0.78);
+  --bg-2: rgba(32, 42, 56, 0.85);
+  --bg-3: rgba(44, 57, 74, 0.9);
+  --border: rgba(110, 132, 160, 0.4);
 }
 :root[data-glass='true'][data-theme='light'] {
-  --bg-0: rgba(246, 248, 250, 0.68);
-  --bg-1: rgba(255, 255, 255, 0.62);
-  --bg-2: rgba(232, 237, 243, 0.74);
-  --bg-3: rgba(218, 226, 236, 0.84);
-  --border: rgba(130, 145, 165, 0.38);
+  --bg-0: rgba(246, 248, 250, 0.8);
+  --bg-1: rgba(255, 255, 255, 0.74);
+  --bg-2: rgba(232, 237, 243, 0.84);
+  --bg-3: rgba(218, 226, 236, 0.9);
+  --border: rgba(120, 136, 158, 0.45);
 }
 :root[data-glass='true'], :root[data-glass='true'] body { background: transparent; }
 /* the content area needs its own tint so text stays readable over any wallpaper */
@@ -73,7 +73,7 @@
 :root[data-glass='true'][data-theme='light'] .toast,
 :root[data-glass='true'][data-theme='light'] .transfer-item { background: rgba(255, 255, 255, 0.85); }
 
-/* ---------- title bar ---------- */
+/* ---------- title bar (follows app theme) ---------- */
 .shell { display: flex; flex-direction: column; height: 100%; }
 .titlebar {
   height: 38px;
@@ -84,6 +84,8 @@
   padding: 0 14px;
   -webkit-app-region: drag;
   user-select: none;
+  background: var(--bg-1);
+  color: var(--text-0);
   border-bottom: 1px solid var(--border);
 }
 .titlebar.mac { padding-left: 80px; }
@@ -92,11 +94,43 @@
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--text-1);
+  color: var(--text-0);
 }
-.titlebar .titlebar-sub { font-size: 11px; color: var(--text-2); }
+.titlebar .titlebar-sub {
+  font-size: 12px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* keep clear of the native window-controls overlay on Windows */
-.titlebar .titlebar-spacer { flex: 1; }
+.titlebar .titlebar-spacer { flex: 1; min-width: 140px; }
+
+/* ---------- split panes ---------- */
+.split-root {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  gap: 1px;
+  background: var(--border);
+}
+.split-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+.term-pane { flex: 1; min-height: 0; }
+.term-pane.active { box-shadow: inset 0 2px 0 0 var(--accent); }
+.tab-strip-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding-left: 8px;
+  flex-shrink: 0;
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 

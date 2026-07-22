@@ -11,7 +11,7 @@ interface Msg {
 }
 
 export default function AIDrawer(): JSX.Element {
-  const { setAiOpen, activeTab, sendToActiveTerminal, settings, toast, setView } = useApp()
+  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView } = useApp()
   const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -26,7 +26,7 @@ export default function AIDrawer(): JSX.Element {
     inputRef.current?.focus()
   }, [])
 
-  const hasTerminal = activeTab?.kind === 'terminal' && !!activeTab.sessionId
+  const hasTerminal = !!activeSessionId
 
   const ask = async (kind: AIRequest['kind'], prompt: string, showAs?: string): Promise<void> => {
     if (busy) return
@@ -38,10 +38,7 @@ export default function AIDrawer(): JSX.Element {
     setMessages((m) => [...m, { role: 'user', text: showAs ?? prompt }])
     setBusy(true)
     try {
-      const res = await window.termite.ai.run(
-        { kind, prompt },
-        hasTerminal ? activeTab!.sessionId : undefined
-      )
+      const res = await window.termite.ai.run({ kind, prompt }, activeSessionId)
       if (res.ok && res.text) {
         setMessages((m) => [...m, { role: 'assistant', text: res.text!, command: res.command }])
       } else {

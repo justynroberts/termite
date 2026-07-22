@@ -206,6 +206,24 @@ export const IconSend = ({ size }: IconProps): JSX.Element =>
     size
   )
 
+export const IconSplitRight = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+    </>,
+    size
+  )
+
+export const IconSplitDown = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+    </>,
+    size
+  )
+
 export const IconCopy = ({ size }: IconProps): JSX.Element =>
   svg(
     <>

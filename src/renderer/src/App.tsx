@@ -1,15 +1,16 @@
 import { useEffect, useState, type JSX } from 'react'
-import { useApp, type View } from './state'
+import { tabStatus, useApp, type View } from './state'
 import HostsPanel from './components/HostsPanel'
 import KeysPanel from './components/KeysPanel'
 import SnippetsPanel from './components/SnippetsPanel'
 import ForwardsPanel from './components/ForwardsPanel'
 import SettingsPanel from './components/SettingsPanel'
-import TerminalView from './components/TerminalView'
+import TerminalPane from './components/TerminalView'
 import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
 import {
-  IconForward, IconKey, IconServer, IconSettings, IconSnippet, IconSparkle, IconX
+  IconForward, IconKey, IconServer, IconSettings, IconSnippet, IconSparkle,
+  IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
 
@@ -23,7 +24,8 @@ const NAV: { view: View; icon: JSX.Element; title: string }[] = [
 export default function App(): JSX.Element {
   const {
     view, setView, tabs, activeTabId, setActiveTabId, closeTab, aiOpen, setAiOpen,
-    transfers, toasts, settings, activeTab
+    transfers, toasts, settings, activeTab,
+    splitPane, closePane, activePaneId
   } = useApp()
 
   const [materialSupported, setMaterialSupported] = useState(false)
@@ -41,20 +43,34 @@ export default function App(): JSX.Element {
     if (materialSupported) {
       window.termite.windowFx.setMaterial(settings.windowEffect)
     }
-    window.termite.windowFx.setOverlay(settings.theme === 'light' ? '#4b5768' : '#9fb0c3')
+    window.termite.windowFx.setOverlay(settings.theme === 'light' ? '#3d4a5c' : '#b3c2d4')
   }, [settings.theme, settings.windowEffect, materialSupported])
 
   // global shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const mod = e.ctrlKey || e.metaKey
-      if (mod && e.key.toLowerCase() === 'k') {
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setAiOpen((v) => !v)
       }
-      if (mod && e.key.toLowerCase() === 'w' && activeTabId) {
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'w' && activeTabId) {
         e.preventDefault()
         maybeCloseTab(activeTabId)
+      }
+      if (mod && e.shiftKey && activeTab?.kind === 'terminal') {
+        const k = e.key.toLowerCase()
+        if (k === 'e') {
+          e.preventDefault()
+          splitPane(activeTab.id, 'right')
+        } else if (k === 'o') {
+          e.preventDefault()
+          splitPane(activeTab.id, 'down')
+        } else if (k === 'w') {
+          e.preventDefault()
+          const paneId = activePaneId[activeTab.id]
+          if (paneId) closePane(activeTab.id, paneId)
+        }
       }
       if (mod && e.key === 'Tab') {
         e.preventDefault()
@@ -68,15 +84,18 @@ export default function App(): JSX.Element {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabs, activeTabId])
+  }, [tabs, activeTabId, activeTab, activePaneId])
 
   const maybeCloseTab = (id: string): void => {
     const tab = tabs.find((t) => t.id === id)
-    if (tab && settings.confirmOnClose && tab.status === 'connected') {
+    if (tab && settings.confirmOnClose && tabStatus(tab) === 'connected') {
       if (!confirm(`Close ${tab.title}? The connection will be terminated.`)) return
     }
     closeTab(id)
   }
+
+  const activeIsSplit =
+    activeTab?.kind === 'terminal' && (activeTab.columns?.flat().length ?? 0) > 1
 
   return (
     <div className="shell">
@@ -88,7 +107,6 @@ export default function App(): JSX.Element {
       </div>
       <div className="app">
       <div className="activity-bar">
-        <div className="logo" title="Termite">🐜</div>
         {NAV.map((n) => (
           <button
             key={n.view}
@@ -139,7 +157,7 @@ export default function App(): JSX.Element {
                     onClick={() => setActiveTabId(tab.id)}
                     onAuxClick={(e) => e.button === 1 && maybeCloseTab(tab.id)}
                   >
-                    <span className={`tab-status ${tab.status}`} />
+                    <span className={`tab-status ${tabStatus(tab)}`} />
                     <span className="tab-title">{tab.title}</span>
                     <span
                       className="tab-close"
@@ -152,6 +170,36 @@ export default function App(): JSX.Element {
                     </span>
                   </button>
                 ))}
+                {activeTab?.kind === 'terminal' && (
+                  <div className="tab-strip-actions">
+                    <button
+                      className="icon-btn"
+                      title="Split right (Ctrl+Shift+E)"
+                      onClick={() => splitPane(activeTab.id, 'right')}
+                    >
+                      <IconSplitRight size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Split down (Ctrl+Shift+O)"
+                      onClick={() => splitPane(activeTab.id, 'down')}
+                    >
+                      <IconSplitDown size={15} />
+                    </button>
+                    {activeIsSplit && (
+                      <button
+                        className="icon-btn"
+                        title="Close pane (Ctrl+Shift+W)"
+                        onClick={() => {
+                          const paneId = activePaneId[activeTab.id]
+                          if (paneId) closePane(activeTab.id, paneId)
+                        }}
+                      >
+                        <IconX size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             <div className="content">
@@ -162,6 +210,9 @@ export default function App(): JSX.Element {
                   <div>Double-click a host to open a terminal</div>
                   <div className="shortcuts">
                     <div><span>AI Copilot</span><kbd>Ctrl K</kbd></div>
+                    <div><span>Split right</span><kbd>Ctrl Shift E</kbd></div>
+                    <div><span>Split down</span><kbd>Ctrl Shift O</kbd></div>
+                    <div><span>Close pane</span><kbd>Ctrl Shift W</kbd></div>
                     <div><span>Close tab</span><kbd>Ctrl W</kbd></div>
                     <div><span>Next tab</span><kbd>Ctrl Tab</kbd></div>
                   </div>
@@ -170,7 +221,22 @@ export default function App(): JSX.Element {
               {tabs.map((tab) => (
                 <div key={tab.id} className={`content-pane ${tab.id === activeTabId ? 'visible' : ''}`}>
                   {tab.kind === 'terminal' ? (
-                    <TerminalView tab={tab} visible={tab.id === activeTabId} />
+                    <div className="split-root">
+                      {(tab.columns ?? []).map((col, ci) => (
+                        <div className="split-col" key={ci}>
+                          {col.map((pane) => (
+                            <TerminalPane
+                              key={pane.paneId}
+                              tab={tab}
+                              pane={pane}
+                              visible={tab.id === activeTabId}
+                              active={activePaneId[tab.id] === pane.paneId}
+                              showActiveRing={(tab.columns?.flat().length ?? 0) > 1}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <SftpView tab={tab} visible={tab.id === activeTabId} />
                   )}
