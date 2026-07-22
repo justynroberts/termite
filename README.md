@@ -5,9 +5,24 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 ## Features
 
 **Terminal**
-- Tabbed SSH terminals (xterm.js, 256-color, WebGL-ready), Ctrl+Tab to switch, middle-click to close
+- Tabbed SSH terminals (xterm.js, 256-color), Ctrl+Tab to switch, middle-click to close
+- **Split panes** — up to 8 per tab in columns and rows, each pane its own live SSH session.
+  Split with the tab-strip buttons or shortcuts; close a pane with its hover ✕, `Ctrl+Shift+W`,
+  or just `exit` the shell (split panes auto-collapse when their shell exits)
+- Focused pane gets an accent indicator; snippets and the AI copilot always target it
 - Right-click to copy selection / paste
 - Per-app font, cursor, and scrollback settings applied live
+
+**Keyboard shortcuts**
+
+| Action | Shortcut |
+|---|---|
+| AI Copilot | `Ctrl/Cmd + K` |
+| Split pane right | `Ctrl/Cmd + Shift + E` |
+| Split pane down | `Ctrl/Cmd + Shift + O` |
+| Close pane | `Ctrl/Cmd + Shift + W` |
+| Close tab | `Ctrl/Cmd + W` |
+| Next / previous tab | `Ctrl + Tab` / `Ctrl + Shift + Tab` |
 
 **Hosts & auth**
 - Host vault with groups, tags, colors, and search
@@ -37,7 +52,17 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 - Destructive commands are generated with guardrails; nothing runs without your click
 
 **Snippets**
-- Save frequent commands, run them in the active session with one click
+- Save frequent commands, run them in the focused pane with one click
+
+**Appearance**
+- Windows 11 native look: **Mica / Acrylic** window materials, rounded corners, native
+  window-controls overlay; macOS vibrancy. Switchable (or fully solid) in Settings → Appearance
+- Theme-aware custom title bar
+- 10 terminal themes (Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, One Dark, Monokai,
+  Solarized dark/light, Termite Dark) with a live visual picker
+- Bundled coding fonts: JetBrains Mono, Fira Code (ligatures), IBM Plex Mono, Source Code Pro;
+  Inter for the UI — all packaged, no network needed
+- Dark and light app themes
 
 ## Development
 

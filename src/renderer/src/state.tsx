@@ -140,6 +140,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   }, [refreshHosts, refreshKeys, refreshSnippets, refreshForwards])
 
   // session status updates → panes
+  const closePaneRef = useRef<(tabId: string, paneId: string) => void>(() => undefined)
   useEffect(() => {
     return window.termite.ssh.onStatus((info) => {
       setTabs((t) =>
@@ -158,6 +159,17 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
           return changed ? { ...tab, columns } : tab
         })
       )
+      // shell exited (user typed `exit`): collapse the pane if the tab is split,
+      // so dead panes never linger. A lone pane keeps its scrollback visible.
+      if (info.status === 'disconnected') {
+        const tab = tabsRef.current.find(
+          (x) => x.kind === 'terminal' && x.columns?.flat().some((p) => p.sessionId === info.sessionId)
+        )
+        const pane = tab?.columns?.flat().find((p) => p.sessionId === info.sessionId)
+        if (tab && pane && (tab.columns?.flat().length ?? 0) > 1) {
+          closePaneRef.current(tab.id, pane.paneId)
+        }
+      }
       if (info.status === 'error' && info.error) toast(`${info.hostLabel}: ${info.error}`, 'error')
     })
   }, [toast])
@@ -318,6 +330,8 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     },
     [closeTab, updateTab, setActivePane]
   )
+
+  closePaneRef.current = closePane
 
   const activeTab = useMemo(() => tabs.find((t) => t.id === activeTabId) ?? null, [tabs, activeTabId])
 

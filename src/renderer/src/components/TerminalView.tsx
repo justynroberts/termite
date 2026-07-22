@@ -6,6 +6,7 @@ import { SearchAddon } from '@xterm/addon-search'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
+import { IconX } from '../icons'
 
 /** #rrggbb → rgba(...) with alpha, for glass mode */
 function withAlpha(hex: string | undefined, alpha: number): string {
@@ -41,7 +42,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
   const startedRef = useRef(false)
-  const { settings, updatePane, setActivePane, toast } = useApp()
+  const { settings, updatePane, setActivePane, closePane, toast } = useApp()
 
   // create terminal + connect once
   useEffect(() => {
@@ -92,11 +93,19 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
         toast(`Connection to ${tab.title} failed: ${msg}`, 'error')
       })
 
-    // mark pane active whenever it gains focus
+    // mark pane active + refocus the terminal whenever it's clicked.
+    // (Without the explicit focus() call, clicking back into an already-active
+    // pane after using a toolbar button left keyboard focus on that button —
+    // making Space "click" the button instead of typing into the terminal.)
     const el = containerRef.current
     const onFocusIn = (): void => setActivePane(tab.id, pane.paneId)
+    const onMouseDown = (): void => {
+      setActivePane(tab.id, pane.paneId)
+      // defer so xterm's own mousedown (selection) runs first
+      setTimeout(() => termRef.current?.focus(), 0)
+    }
     el.addEventListener('focusin', onFocusIn)
-    el.addEventListener('mousedown', onFocusIn)
+    el.addEventListener('mousedown', onMouseDown)
 
     const onContextMenu = async (e: MouseEvent): Promise<void> => {
       e.preventDefault()
@@ -115,7 +124,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       disposed = true
       el.removeEventListener('contextmenu', onContextMenu)
       el.removeEventListener('focusin', onFocusIn)
-      el.removeEventListener('mousedown', onFocusIn)
+      el.removeEventListener('mousedown', onMouseDown)
       unsubData?.()
       term.dispose()
       termRef.current = null
@@ -162,6 +171,23 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       className={`terminal-container term-pane ${active && showActiveRing ? 'active' : ''}`}
       style={{ ['--term-bg' as string]: termBg }}
       ref={containerRef}
-    />
+    >
+      {showActiveRing && (
+        <button
+          className="pane-close"
+          title="Close this pane"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            closePane(tab.id, pane.paneId)
+          }}
+        >
+          <IconX size={12} />
+        </button>
+      )}
+    </div>
   )
 }

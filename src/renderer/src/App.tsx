@@ -106,7 +106,12 @@ export default function App(): JSX.Element {
         <span className="titlebar-spacer" />
       </div>
       <div className="app">
-      <div className="activity-bar">
+      <div
+        className="activity-bar"
+        onMouseDown={(e) => {
+          if ((e.target as HTMLElement).closest('button')) e.preventDefault()
+        }}
+      >
         {NAV.map((n) => (
           <button
             key={n.view}
@@ -149,7 +154,13 @@ export default function App(): JSX.Element {
         ) : (
           <>
             {tabs.length > 0 && (
-              <div className="tab-strip">
+              <div
+                className="tab-strip"
+                // never let toolbar clicks steal keyboard focus from the terminal
+                onMouseDown={(e) => {
+                  if ((e.target as HTMLElement).closest('button')) e.preventDefault()
+                }}
+              >
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
