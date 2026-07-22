@@ -48,12 +48,45 @@ npm run build      # production build to out/
 npm run typecheck
 ```
 
-## Packaging
+## Packaging & deployment
+
+One command per platform — output lands in `dist/`:
 
 ```bash
-npm run package:win   # NSIS installer (run on Windows)
-npm run package:mac   # DMG (run on macOS)
+npm run package:win   # → Termite-Setup-<ver>.exe (installer) + Termite-Portable-<ver>.exe
+npm run package:mac   # → Termite-<ver>-mac.dmg + .zip (universal: Apple Silicon + Intel)
 ```
+
+The portable `.exe` needs no installation at all — copy it anywhere and run.
+
+### CI releases (recommended)
+
+Push the repo to GitHub, then cut a release with:
+
+```bash
+git tag v0.1.0
+git push origin main --tags
+```
+
+The included [GitHub Actions workflow](.github/workflows/release.yml) builds **Windows and macOS
+installers in parallel** and attaches them to a GitHub Release automatically. No signing
+certificates needed to get started (see below). You can also trigger a build manually from the
+Actions tab (`workflow_dispatch`) — artifacts appear on the run page.
+
+### Code signing (optional, removes OS warnings)
+
+Unsigned builds work, but Windows SmartScreen shows "unknown publisher" (click *More info → Run
+anyway*) and macOS requires a one-time right-click → *Open*. To sign:
+
+- **Windows**: set `CSC_LINK` / `CSC_KEY_PASSWORD` secrets (PFX cert) and remove nothing — electron-builder picks them up.
+- **macOS**: set `CSC_LINK` / `CSC_KEY_PASSWORD` (Developer ID cert), delete the
+  `CSC_IDENTITY_AUTO_DISCOVERY: 'false'` line in the workflow, and add notarization env
+  (`APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`).
+
+### App icon
+
+`build/icon.png` (512×512) is auto-converted to `.ico`/`.icns` per platform.
+Regenerate it after design tweaks with `npm run icon`.
 
 ## Security notes
 

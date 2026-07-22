@@ -1,4 +1,5 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { release } from 'os'
 import { join } from 'path'
 import { Store } from './store'
 import { SSHManager } from './ssh/SSHManager'
@@ -8,15 +9,30 @@ let mainWindow: BrowserWindow | null = null
 let store: Store
 let ssh: SSHManager
 
+const isMac = process.platform === 'darwin'
+const isWin = process.platform === 'win32'
+// Mica/Acrylic need Windows 11 (build 22000+)
+const winBuild = isWin ? parseInt(release().split('.')[2] ?? '0', 10) : 0
+export const supportsMaterial = isWin && winBuild >= 22000
+
 function createWindow(): void {
+  const effect = store.getSettings().windowEffect ?? 'mica'
+  const useMaterial = supportsMaterial && effect !== 'solid'
+
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 860,
     minWidth: 900,
     minHeight: 600,
     show: false,
-    backgroundColor: '#0d1117',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    // transparent chrome: material provides the backdrop on Win11; vibrancy on macOS
+    ...(useMaterial ? { backgroundMaterial: effect as 'mica' | 'acrylic' } : { backgroundColor: '#0d1117' }),
+    ...(isMac ? { vibrancy: 'under-window' as const, visualEffectState: 'active' as const } : {}),
+    titleBarStyle: 'hidden',
+    ...(isWin
+      ? { titleBarOverlay: { color: '#00000000', symbolColor: '#9fb0c3', height: 38 } }
+      : {}),
+    trafficLightPosition: isMac ? { x: 14, y: 12 } : undefined,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -46,6 +62,31 @@ app.whenReady().then(() => {
   store = new Store()
   ssh = new SSHManager(store)
   registerIpc(store, ssh, () => mainWindow)
+
+  // window chrome effects (Win11 Mica/Acrylic, native controls overlay tinting)
+  ipcMain.handle('window:capabilities', () => ({
+    material: supportsMaterial,
+    platform: process.platform
+  }))
+  ipcMain.handle('window:set-material', (_e, effect: 'mica' | 'acrylic' | 'solid') => {
+    if (!mainWindow || !supportsMaterial) return
+    if (effect === 'solid') {
+      mainWindow.setBackgroundMaterial('none')
+      mainWindow.setBackgroundColor('#0d1117')
+    } else {
+      mainWindow.setBackgroundMaterial(effect)
+    }
+  })
+  ipcMain.handle('window:set-overlay', (_e, symbolColor: string) => {
+    if (mainWindow && isWin) {
+      try {
+        mainWindow.setTitleBarOverlay({ color: '#00000000', symbolColor, height: 38 })
+      } catch {
+        /* older Windows */
+      }
+    }
+  })
+
   createWindow()
 
   app.on('activate', () => {

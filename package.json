@@ -90,10 +90,6 @@
     },
     "dmg": {
       "artifactName": "${productName}-${version}-mac.${ext}"
-    },
-    "publish": {
-      "provider": "github",
-      "releaseType": "release"
     }
   }
 }

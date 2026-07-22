@@ -7,6 +7,26 @@ import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab } from '../state'
 import { getTerminalTheme } from '../themes'
 
+/** #rrggbb → rgba(...) with alpha, for glass mode */
+function withAlpha(hex: string | undefined, alpha: number): string {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return hex ?? '#0d1117'
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function isGlass(): boolean {
+  return document.documentElement.dataset.glass === 'true'
+}
+
+function themedBackground(themeId: string): { theme: ReturnType<typeof getTerminalTheme>['theme']; bg: string } {
+  const base = getTerminalTheme(themeId).theme
+  if (!isGlass()) return { theme: base, bg: base.background ?? '#0d1117' }
+  const bg = withAlpha(base.background, 0.86)
+  return { theme: { ...base, background: bg }, bg }
+}
+
 interface Props {
   tab: Tab
   visible: boolean
@@ -30,7 +50,8 @@ export default function TerminalView({ tab, visible }: Props): JSX.Element {
       cursorStyle: settings.cursorStyle,
       cursorBlink: settings.cursorBlink,
       scrollback: settings.scrollback,
-      theme: getTerminalTheme(settings.terminalTheme).theme,
+      theme: themedBackground(settings.terminalTheme).theme,
+      allowTransparency: true,
       allowProposedApi: true
     })
     const fit = new FitAddon()
@@ -122,11 +143,11 @@ export default function TerminalView({ tab, visible }: Props): JSX.Element {
     term.options.fontFamily = settings.fontFamily
     term.options.cursorStyle = settings.cursorStyle
     term.options.cursorBlink = settings.cursorBlink
-    term.options.theme = getTerminalTheme(settings.terminalTheme).theme
+    term.options.theme = themedBackground(settings.terminalTheme).theme
     fitRef.current?.fit()
-  }, [settings.fontSize, settings.fontFamily, settings.cursorStyle, settings.cursorBlink, settings.terminalTheme])
+  }, [settings.fontSize, settings.fontFamily, settings.cursorStyle, settings.cursorBlink, settings.terminalTheme, settings.windowEffect])
 
-  const termBg = getTerminalTheme(settings.terminalTheme).theme.background
+  const termBg = themedBackground(settings.terminalTheme).bg
   return (
     <div
       className="terminal-container"

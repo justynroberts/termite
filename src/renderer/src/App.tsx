@@ -1,4 +1,4 @@
-import { useEffect, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { useApp, type View } from './state'
 import HostsPanel from './components/HostsPanel'
 import KeysPanel from './components/KeysPanel'
@@ -26,10 +26,23 @@ export default function App(): JSX.Element {
     transfers, toasts, settings, activeTab
   } = useApp()
 
-  // apply UI theme to document root
+  const [materialSupported, setMaterialSupported] = useState(false)
+
+  useEffect(() => {
+    window.termite.windowFx.capabilities().then((c) => setMaterialSupported(c.material))
+  }, [])
+
+  // apply UI theme + window material to document root / native window
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme
-  }, [settings.theme])
+    const glass =
+      (materialSupported && settings.windowEffect !== 'solid') || window.termite.platform === 'darwin'
+    document.documentElement.dataset.glass = String(glass)
+    if (materialSupported) {
+      window.termite.windowFx.setMaterial(settings.windowEffect)
+    }
+    window.termite.windowFx.setOverlay(settings.theme === 'light' ? '#4b5768' : '#9fb0c3')
+  }, [settings.theme, settings.windowEffect, materialSupported])
 
   // global shortcuts
   useEffect(() => {
@@ -66,7 +79,14 @@ export default function App(): JSX.Element {
   }
 
   return (
-    <div className="app">
+    <div className="shell">
+      <div className={`titlebar ${window.termite.platform === 'darwin' ? 'mac' : ''}`}>
+        <span className="titlebar-logo">🐜</span>
+        <span className="titlebar-title">Termite</span>
+        {activeTab && <span className="titlebar-sub">— {activeTab.title}</span>}
+        <span className="titlebar-spacer" />
+      </div>
+      <div className="app">
       <div className="activity-bar">
         <div className="logo" title="Termite">🐜</div>
         {NAV.map((n) => (
@@ -191,6 +211,7 @@ export default function App(): JSX.Element {
             {t.text}
           </div>
         ))}
+      </div>
       </div>
     </div>
   )

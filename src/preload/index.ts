@@ -68,6 +68,11 @@ export interface TermiteAPI {
   ai: {
     run(req: AIRequest, sessionId?: string): Promise<AIResponse>
   }
+  windowFx: {
+    capabilities(): Promise<{ material: boolean; platform: string }>
+    setMaterial(effect: 'mica' | 'acrylic' | 'solid'): Promise<void>
+    setOverlay(symbolColor: string): Promise<void>
+  }
   platform: string
 }
 
@@ -142,6 +147,11 @@ const api: TermiteAPI = {
   },
   ai: {
     run: (req, sessionId) => ipcRenderer.invoke('ai:run', req, sessionId)
+  },
+  windowFx: {
+    capabilities: () => ipcRenderer.invoke('window:capabilities'),
+    setMaterial: (effect) => ipcRenderer.invoke('window:set-material', effect),
+    setOverlay: (symbolColor) => ipcRenderer.invoke('window:set-overlay', symbolColor)
   },
   platform: process.platform
 }

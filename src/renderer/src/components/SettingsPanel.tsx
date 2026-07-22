@@ -33,6 +33,21 @@ export default function SettingsPanel(): JSX.Element {
             <option value="dark">Dark</option>
             <option value="light">Light</option>
           </select>
+          <label>Window effect</label>
+          <div>
+            <select
+              value={form.windowEffect}
+              onChange={(e) => set('windowEffect', e.target.value as AppSettings['windowEffect'])}
+            >
+              <option value="mica">Mica — subtle desktop tint (Windows 11)</option>
+              <option value="acrylic">Acrylic — frosted glass blur</option>
+              <option value="solid">Solid — no transparency</option>
+            </select>
+            <div className="hint">
+              Applies instantly on Windows 11. macOS always uses native vibrancy; older Windows falls
+              back to solid.
+            </div>
+          </div>
         </div>
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 12, color: 'var(--text-1)', marginBottom: 8 }}>Terminal theme</div>

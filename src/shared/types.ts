@@ -65,6 +65,8 @@ export interface AppSettings {
   aiModel: string
   terminalTheme: string
   confirmOnClose: boolean
+  /** Windows 11 backdrop material (macOS always uses vibrancy) */
+  windowEffect: 'mica' | 'acrylic' | 'solid'
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -77,7 +79,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiEnabled: true,
   aiModel: 'claude-sonnet-5',
   terminalTheme: 'termite-dark',
-  confirmOnClose: true
+  confirmOnClose: true,
+  windowEffect: 'mica'
 }
 
 export interface SessionInfo {
