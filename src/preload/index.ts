@@ -72,6 +72,7 @@ export interface TermiteAPI {
     capabilities(): Promise<{ material: boolean; platform: string }>
     setMaterial(effect: 'mica' | 'acrylic' | 'solid'): Promise<void>
     setOverlay(symbolColor: string): Promise<void>
+    setFullscreen(on: boolean): Promise<void>
   }
   platform: string
 }
@@ -151,7 +152,8 @@ const api: TermiteAPI = {
   windowFx: {
     capabilities: () => ipcRenderer.invoke('window:capabilities'),
     setMaterial: (effect) => ipcRenderer.invoke('window:set-material', effect),
-    setOverlay: (symbolColor) => ipcRenderer.invoke('window:set-overlay', symbolColor)
+    setOverlay: (symbolColor) => ipcRenderer.invoke('window:set-overlay', symbolColor),
+    setFullscreen: (on) => ipcRenderer.invoke('window:set-fullscreen', on)
   },
   platform: process.platform
 }

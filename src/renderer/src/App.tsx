@@ -24,15 +24,25 @@ const NAV: { view: View; icon: JSX.Element; title: string }[] = [
 export default function App(): JSX.Element {
   const {
     view, setView, tabs, activeTabId, setActiveTabId, closeTab, aiOpen, setAiOpen,
-    transfers, toasts, settings, activeTab,
+    transfers, toasts, toast, settings, activeTab,
     splitPane, closePane, activePaneId
   } = useApp()
 
   const [materialSupported, setMaterialSupported] = useState(false)
+  const [zen, setZen] = useState(false)
 
   useEffect(() => {
     window.termite.windowFx.capabilities().then((c) => setMaterialSupported(c.material))
   }, [])
+
+  const toggleZen = (): void => {
+    setZen((z) => {
+      const next = !z
+      window.termite.windowFx.setFullscreen(next)
+      if (next) toast('Zen mode — Ctrl+Shift+Z or the ✕ pill to exit')
+      return next
+    })
+  }
 
   // apply UI theme + window material to document root / native window
   useEffect(() => {
@@ -57,6 +67,10 @@ export default function App(): JSX.Element {
       if (mod && !e.shiftKey && e.key.toLowerCase() === 'w' && activeTabId) {
         e.preventDefault()
         maybeCloseTab(activeTabId)
+      }
+      if (mod && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        toggleZen()
       }
       if (mod && e.shiftKey && activeTab?.kind === 'terminal') {
         const k = e.key.toLowerCase()
@@ -98,7 +112,12 @@ export default function App(): JSX.Element {
     activeTab?.kind === 'terminal' && (activeTab.columns?.flat().length ?? 0) > 1
 
   return (
-    <div className="shell">
+    <div className={`shell ${zen ? 'zen' : ''}`}>
+      {zen && (
+        <button className="zen-exit" title="Exit zen mode (Ctrl+Shift+Z)" onClick={toggleZen}>
+          <IconX size={13} /> zen
+        </button>
+      )}
       <div className={`titlebar ${window.termite.platform === 'darwin' ? 'mac' : ''}`}>
         <span className="titlebar-logo">🐜</span>
         <span className="titlebar-title">Termite</span>
@@ -221,6 +240,7 @@ export default function App(): JSX.Element {
                   <div>Double-click a host to open a terminal</div>
                   <div className="shortcuts">
                     <div><span>AI Copilot</span><kbd>Ctrl K</kbd></div>
+                    <div><span>Zen mode</span><kbd>Ctrl Shift Z</kbd></div>
                     <div><span>Split right</span><kbd>Ctrl Shift E</kbd></div>
                     <div><span>Split down</span><kbd>Ctrl Shift O</kbd></div>
                     <div><span>Close pane</span><kbd>Ctrl Shift W</kbd></div>

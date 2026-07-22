@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-07-22
+
+### Added
+- **Zen mode** (`Ctrl+Shift+Z`): OS fullscreen with all chrome hidden (title bar, activity bar,
+  sidebar, tab strip) — terminals fill the entire screen. Exit via the same shortcut or the
+  translucent ✕ pill in the top-right (visible on hover). AI copilot (`Ctrl+K`) and all
+  split-pane shortcuts keep working inside zen.
+
 ## 0.2.0 — 2026-07-22
 
 ### Added

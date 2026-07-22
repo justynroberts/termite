@@ -10,6 +10,8 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
   Split with the tab-strip buttons or shortcuts; close a pane with its hover ✕, `Ctrl+Shift+W`,
   or just `exit` the shell (split panes auto-collapse when their shell exits)
 - Focused pane gets an accent indicator; snippets and the AI copilot always target it
+- **Zen mode** (`Ctrl+Shift+Z`): fullscreen with every bit of chrome hidden — just your
+  terminals edge to edge. Exit with the same shortcut or the faint ✕ pill top-right
 - Right-click to copy selection / paste
 - Per-app font, cursor, and scrollback settings applied live
 
@@ -18,6 +20,7 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 | Action | Shortcut |
 |---|---|
 | AI Copilot | `Ctrl/Cmd + K` |
+| Zen mode (fullscreen, chrome hidden) | `Ctrl/Cmd + Shift + Z` |
 | Split pane right | `Ctrl/Cmd + Shift + E` |
 | Split pane down | `Ctrl/Cmd + Shift + O` |
 | Close pane | `Ctrl/Cmd + Shift + W` |

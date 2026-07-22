@@ -77,6 +77,9 @@ app.whenReady().then(() => {
       mainWindow.setBackgroundMaterial(effect)
     }
   })
+  ipcMain.handle('window:set-fullscreen', (_e, on: boolean) => {
+    mainWindow?.setFullScreen(on)
+  })
   ipcMain.handle('window:set-overlay', (_e, symbolColor: string) => {
     if (mainWindow && isWin) {
       try {
