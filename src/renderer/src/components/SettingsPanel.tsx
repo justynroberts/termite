@@ -117,6 +117,11 @@ export default function SettingsPanel(): JSX.Element {
           </div>
           <label>Scrollback</label>
           <input type="number" value={form.scrollback} min={1000} max={100000} step={1000} onChange={(e) => set('scrollback', parseInt(e.target.value, 10) || 10000)} />
+          <label>Copy on select</label>
+          <div className="checkbox-row">
+            <input type="checkbox" checked={form.copyOnSelect} onChange={(e) => set('copyOnSelect', e.target.checked)} />
+            <span className="hint">Selecting text copies it immediately (PuTTY style)</span>
+          </div>
         </div>
       </div>
 

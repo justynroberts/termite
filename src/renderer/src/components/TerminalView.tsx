@@ -43,6 +43,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const fitRef = useRef<FitAddon | null>(null)
   const startedRef = useRef(false)
   const { settings, updatePane, setActivePane, closePane, toast } = useApp()
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
 
   // create terminal + connect once
   useEffect(() => {
@@ -67,6 +69,42 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     fit.fit()
     termRef.current = term
     fitRef.current = fit
+
+    // --- clipboard: Windows Terminal semantics ---
+    // Ctrl+C with a selection → copy (no SIGINT); without → SIGINT as normal.
+    // Ctrl+V / Ctrl+Shift+V → paste. Ctrl+Shift+C → copy. Cmd variants on macOS.
+    const copySelection = (): void => {
+      if (term.hasSelection()) {
+        window.termite.clipboard.writeText(term.getSelection())
+        term.clearSelection()
+      }
+    }
+    const pasteClipboard = (): void => {
+      const text = window.termite.clipboard.readText()
+      if (text) term.paste(text)
+    }
+    term.attachCustomKeyEventHandler((ev) => {
+      if (ev.type !== 'keydown') return true
+      const mod = ev.ctrlKey || ev.metaKey
+      if (!mod) return true
+      if (ev.code === 'KeyC' && (ev.shiftKey || term.hasSelection())) {
+        ev.preventDefault()
+        copySelection()
+        return false
+      }
+      if (ev.code === 'KeyV') {
+        ev.preventDefault() // stop the native paste so it doesn't double up
+        pasteClipboard()
+        return false
+      }
+      return true
+    })
+
+    term.onSelectionChange(() => {
+      if (settingsRef.current.copyOnSelect && term.hasSelection()) {
+        window.termite.clipboard.writeText(term.getSelection())
+      }
+    })
 
     term.writeln(`\x1b[38;5;36m● Termite\x1b[0m connecting to \x1b[1m${tab.title}\x1b[0m ...`)
 
@@ -107,16 +145,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     el.addEventListener('focusin', onFocusIn)
     el.addEventListener('mousedown', onMouseDown)
 
-    const onContextMenu = async (e: MouseEvent): Promise<void> => {
+    // right-click: copy selection if there is one, otherwise paste
+    const onContextMenu = (e: MouseEvent): void => {
       e.preventDefault()
-      const sel = term.getSelection()
-      if (sel) {
-        await navigator.clipboard.writeText(sel)
-        term.clearSelection()
-      } else {
-        const text = await navigator.clipboard.readText()
-        if (text) term.paste(text)
-      }
+      if (term.hasSelection()) copySelection()
+      else pasteClipboard()
     }
     el.addEventListener('contextmenu', onContextMenu)
 

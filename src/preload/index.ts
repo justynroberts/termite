@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { clipboard, contextBridge, ipcRenderer } from 'electron'
 import type {
   AIRequest, AIResponse, AppSettings, FileEntry, Host, PortForward,
   SSHKey, SessionInfo, Snippet, TransferProgress
@@ -73,6 +73,10 @@ export interface TermiteAPI {
     setMaterial(effect: 'mica' | 'acrylic' | 'solid'): Promise<void>
     setOverlay(symbolColor: string): Promise<void>
     setFullscreen(on: boolean): Promise<void>
+  }
+  clipboard: {
+    readText(): string
+    writeText(text: string): void
   }
   platform: string
 }
@@ -154,6 +158,10 @@ const api: TermiteAPI = {
     setMaterial: (effect) => ipcRenderer.invoke('window:set-material', effect),
     setOverlay: (symbolColor) => ipcRenderer.invoke('window:set-overlay', symbolColor),
     setFullscreen: (on) => ipcRenderer.invoke('window:set-fullscreen', on)
+  },
+  clipboard: {
+    readText: () => clipboard.readText(),
+    writeText: (text) => clipboard.writeText(text)
   },
   platform: process.platform
 }

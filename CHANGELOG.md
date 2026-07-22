@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.2 — 2026-07-22
+
+### Fixed
+- **Copy/paste in the terminal.** The hidden default menu was swallowing `Ctrl+C`/`Ctrl+V`
+  before the terminal saw them, and xterm selections aren't DOM selections so the menu's
+  Copy copied nothing. The app menu is now removed on Windows/Linux and the terminal handles
+  clipboard keys itself, using Electron's native clipboard:
+  - `Ctrl+C` with a selection → copy (no SIGINT); without a selection → SIGINT as normal
+  - `Ctrl+V` or `Ctrl+Shift+V` → paste; `Ctrl+Shift+C` → copy (Cmd variants on macOS)
+  - Right-click → copy selection, or paste when nothing is selected
+
+### Added
+- **Copy on select** (Settings → Terminal): PuTTY-style — selecting text copies it immediately.
+
 ## 0.3.1 — 2026-07-22
 
 ### Fixed

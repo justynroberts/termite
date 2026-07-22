@@ -12,7 +12,9 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 - Focused pane gets an accent indicator; snippets and the AI copilot always target it
 - **Zen mode** (`Ctrl+Shift+Z`): fullscreen with every bit of chrome hidden — just your
   terminals edge to edge. Exit with the same shortcut or the faint ✕ pill top-right
-- Right-click to copy selection / paste
+- Clipboard done right: `Ctrl+C` copies when text is selected (SIGINT otherwise),
+  `Ctrl+V`/`Ctrl+Shift+V` paste, `Ctrl+Shift+C` copies, right-click copies selection or
+  pastes, optional copy-on-select (PuTTY style)
 - Per-app font, cursor, and scrollback settings applied live
 
 **Keyboard shortcuts**

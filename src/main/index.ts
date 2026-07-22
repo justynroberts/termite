@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { Store } from './store'
@@ -59,6 +59,11 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Windows/Linux: the default menu's Ctrl+C/Ctrl+V accelerators swallow terminal
+  // keystrokes (xterm selections aren't DOM selections, so "Copy" copies nothing).
+  // macOS keeps its menu — Cmd+C/V in regular inputs needs it there.
+  if (!isMac) Menu.setApplicationMenu(null)
+
   store = new Store()
   ssh = new SSHManager(store)
   registerIpc(store, ssh, () => mainWindow)

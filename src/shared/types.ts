@@ -67,6 +67,8 @@ export interface AppSettings {
   confirmOnClose: boolean
   /** Windows 11 backdrop material (macOS always uses vibrancy) */
   windowEffect: 'mica' | 'acrylic' | 'solid'
+  /** PuTTY-style: selecting text immediately copies it */
+  copyOnSelect: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -80,7 +82,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiModel: 'claude-sonnet-5',
   terminalTheme: 'termite-dark',
   confirmOnClose: true,
-  windowEffect: 'mica'
+  windowEffect: 'mica',
+  copyOnSelect: false
 }
 
 export interface SessionInfo {
