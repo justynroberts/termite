@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 — 2026-07-24
+
+### Fixed
+- **Nerd Font icon glyphs (web/globe, git branch, folders, …) now render out of the box.**
+  The official Symbols Nerd Font Mono (v3.4.0, MIT) is bundled with the app and sits in every
+  terminal font stack, so the extended icon set no longer requires a Nerd Font to be installed
+  system-wide. The font is preloaded before terminals render so the glyph atlas never caches
+  tofu boxes.
+
 ## 0.4.0 — 2026-07-22
 
 ### Added
