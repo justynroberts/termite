@@ -74,7 +74,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   fontSize: 13,
-  fontFamily: `'JetBrains Mono', Consolas, monospace`,
+  fontFamily: `'JetBrains Mono', 'Symbols Nerd Font Mono', 'Symbols Nerd Font', 'JetBrainsMono Nerd Font', 'JetBrainsMono NF', Consolas, monospace`,
   cursorStyle: 'block',
   cursorBlink: true,
   scrollback: 10000,

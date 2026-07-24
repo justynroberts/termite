@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { SearchAddon } from '@xterm/addon-search'
+import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
@@ -59,13 +60,23 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       scrollback: settings.scrollback,
       theme: themedBackground(settings.terminalTheme).theme,
       allowTransparency: true,
-      allowProposedApi: true
+      allowProposedApi: true,
+      // draw Powerline glyphs (U+E0B0–E0B7 triangles/half-circles) and box-drawing
+      // characters pixel-perfectly regardless of font — needs the WebGL renderer
+      customGlyphs: true
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
     term.loadAddon(new WebLinksAddon())
     term.loadAddon(new SearchAddon())
     term.open(containerRef.current)
+    try {
+      const webgl = new WebglAddon()
+      webgl.onContextLoss(() => webgl.dispose()) // falls back to DOM renderer
+      term.loadAddon(webgl)
+    } catch {
+      /* GPU unavailable — DOM renderer still works, minus drawn glyphs */
+    }
     fit.fit()
     termRef.current = term
     fitRef.current = fit

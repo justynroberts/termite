@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-07-22
+
+### Added
+- **Powerline glyphs & WebGL renderer.** The terminal now renders on the GPU (WebGL) with
+  xterm's `customGlyphs`, which draws the Powerline triangles/half-circles (U+E0B0–E0B7) and
+  box-drawing characters pixel-perfectly in any font — powerline prompts (starship, oh-my-zsh
+  themes, powerlevel10k separators) just work. Falls back to the DOM renderer if no GPU.
+- All font stacks fall back to locally installed Nerd Fonts (Symbols Nerd Font,
+  JetBrainsMono NF, …) so the extended icon set (git branch, folders) renders when available;
+  existing saved font settings are migrated automatically.
+
 ## 0.3.2 — 2026-07-22
 
 ### Fixed

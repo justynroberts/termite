@@ -193,6 +193,18 @@ export class Store {
   // ---- settings ----
   getSettings(): AppSettings {
     const s = { ...this.data.settings }
+    // migrate pre-0.4 font stacks so Nerd Font fallbacks apply without re-picking
+    if (s.fontFamily && !s.fontFamily.includes('Nerd Font')) {
+      const legacyDefaults = [
+        'Cascadia Code, Menlo, Consolas, monospace',
+        `'JetBrains Mono', Consolas, monospace`
+      ]
+      if (legacyDefaults.includes(s.fontFamily)) {
+        s.fontFamily = DEFAULT_SETTINGS.fontFamily
+        this.data.settings.fontFamily = s.fontFamily
+        this.persist()
+      }
+    }
     // renderer gets a masked key indicator only
     if (s.anthropicApiKey) s.anthropicApiKey = '•••'
     return s

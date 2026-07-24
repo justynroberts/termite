@@ -1,6 +1,6 @@
 {
   "name": "termite",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Termite — a modern, AI-first SSH client for Mac and Windows",
   "main": "out/main/index.js",
   "author": "Termite",
@@ -63,8 +63,18 @@
     "compression": "normal",
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.png"
     },
@@ -81,8 +91,18 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["universal"] },
-        { "target": "zip", "arch": ["universal"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "icon": "build/icon.png",
       "category": "public.app-category.developer-tools",

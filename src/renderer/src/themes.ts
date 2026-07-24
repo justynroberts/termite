@@ -136,12 +136,19 @@ export function getTerminalTheme(id: string): TerminalTheme {
   return TERMINAL_THEMES.find((t) => t.id === id) ?? TERMINAL_THEMES[0]
 }
 
-/** Bundled terminal fonts (shipped via Fontsource, work offline) + safe system fallbacks. */
+/**
+ * Bundled terminal fonts (shipped via Fontsource, work offline) + safe system fallbacks.
+ * Every stack falls back to locally installed Nerd Fonts so the full icon set
+ * (git branch, folders, …) renders if the user has one; the core Powerline
+ * triangles/half-circles are drawn by xterm's customGlyphs either way.
+ */
+const NERD_FALLBACK = `'Symbols Nerd Font Mono', 'Symbols Nerd Font', 'JetBrainsMono Nerd Font', 'JetBrainsMono NF'`
+
 export const TERMINAL_FONTS: { name: string; stack: string; ligatures?: boolean }[] = [
-  { name: 'JetBrains Mono', stack: `'JetBrains Mono', Consolas, monospace` },
-  { name: 'Fira Code', stack: `'Fira Code', Consolas, monospace`, ligatures: true },
-  { name: 'IBM Plex Mono', stack: `'IBM Plex Mono', Consolas, monospace` },
-  { name: 'Source Code Pro', stack: `'Source Code Pro', Consolas, monospace` },
-  { name: 'Cascadia Code (system)', stack: `'Cascadia Code', Consolas, monospace` },
-  { name: 'Menlo / Consolas (system)', stack: `Menlo, Consolas, 'Courier New', monospace` }
+  { name: 'JetBrains Mono', stack: `'JetBrains Mono', ${NERD_FALLBACK}, Consolas, monospace` },
+  { name: 'Fira Code', stack: `'Fira Code', ${NERD_FALLBACK}, Consolas, monospace`, ligatures: true },
+  { name: 'IBM Plex Mono', stack: `'IBM Plex Mono', ${NERD_FALLBACK}, Consolas, monospace` },
+  { name: 'Source Code Pro', stack: `'Source Code Pro', ${NERD_FALLBACK}, Consolas, monospace` },
+  { name: 'Cascadia Code (system)', stack: `'Cascadia Code', ${NERD_FALLBACK}, Consolas, monospace` },
+  { name: 'Menlo / Consolas (system)', stack: `Menlo, ${NERD_FALLBACK}, Consolas, 'Courier New', monospace` }
 ]

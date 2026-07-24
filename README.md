@@ -5,7 +5,11 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 ## Features
 
 **Terminal**
-- Tabbed SSH terminals (xterm.js, 256-color), Ctrl+Tab to switch, middle-click to close
+- Tabbed SSH terminals (xterm.js on the WebGL renderer, 256-color), Ctrl+Tab to switch,
+  middle-click to close
+- **Powerline prompts render out of the box** — the core Powerline glyphs (``…) are drawn
+  by the renderer itself in any font, and Nerd Fonts are picked up automatically if installed
+  for the extended icon set
 - **Split panes** — up to 8 per tab in columns and rows, each pane its own live SSH session.
   Split with the tab-strip buttons or shortcuts; close a pane with its hover ✕, `Ctrl+Shift+W`,
   or just `exit` the shell (split panes auto-collapse when their shell exits)
