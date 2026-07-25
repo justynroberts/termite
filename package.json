@@ -1,6 +1,6 @@
 {
   "name": "termite",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Termite — a modern, AI-first SSH client for Mac and Windows",
   "main": "out/main/index.js",
   "author": "Termite",

@@ -1,7 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import type { AppSettings, Host, KnownHost, PortForward, SSHKey, Snippet } from '../shared/types'
+import type { AppSettings, Host, KnownHost, PortForward, Runbook, SSHKey, Snippet } from '../shared/types'
 import { DEFAULT_SETTINGS } from '../shared/types'
 
 interface StoreShape {
@@ -10,6 +10,7 @@ interface StoreShape {
   snippets: Snippet[]
   forwards: PortForward[]
   knownHosts: KnownHost[]
+  runbooks: Runbook[]
   settings: AppSettings
 }
 
@@ -19,6 +20,7 @@ const EMPTY: StoreShape = {
   snippets: [],
   forwards: [],
   knownHosts: [],
+  runbooks: [],
   settings: { ...DEFAULT_SETTINGS }
 }
 
@@ -153,6 +155,27 @@ export class Store {
 
   deleteSnippet(id: string): void {
     this.data.snippets = this.data.snippets.filter((s) => s.id !== id)
+    this.persist()
+  }
+
+  // ---- runbooks ----
+  listRunbooks(): Runbook[] {
+    return this.data.runbooks
+  }
+
+  getRunbook(id: string): Runbook | undefined {
+    return this.data.runbooks.find((r) => r.id === id)
+  }
+
+  saveRunbook(r: Runbook): void {
+    const idx = this.data.runbooks.findIndex((x) => x.id === r.id)
+    if (idx >= 0) this.data.runbooks[idx] = r
+    else this.data.runbooks.push(r)
+    this.persist()
+  }
+
+  deleteRunbook(id: string): void {
+    this.data.runbooks = this.data.runbooks.filter((r) => r.id !== id)
     this.persist()
   }
 

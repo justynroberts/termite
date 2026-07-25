@@ -2,7 +2,8 @@ import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { homedir } from 'os'
 import { readFileSync } from 'fs'
 import { v4 as uuid } from 'uuid'
-import type { AIRequest, AppSettings, Host, PortForward, SSHKey, Snippet } from '../shared/types'
+import type { AIRequest, AppSettings, Host, PortForward, Runbook, SSHKey, Snippet } from '../shared/types'
+import { RunbookRunner } from './runbooks'
 import { Store } from './store'
 import { SSHManager } from './ssh/SSHManager'
 import {
@@ -174,6 +175,14 @@ export function registerIpc(store: Store, ssh: SSHManager, getWindow: () => Brow
     await ssh.startForward(f)
   })
   ipcMain.handle('forwards:stop', (_e, id: string) => ssh.stopForward(id))
+
+  // ---- runbooks ----
+  const runner = new RunbookRunner(store, ssh, (ev) => send('runbook:event', ev))
+  ipcMain.handle('runbooks:list', () => store.listRunbooks())
+  ipcMain.handle('runbooks:save', (_e, r: Runbook) => store.saveRunbook(r))
+  ipcMain.handle('runbooks:delete', (_e, id: string) => store.deleteRunbook(id))
+  ipcMain.handle('runbooks:run', (_e, id: string) => runner.start(id))
+  ipcMain.handle('runbooks:cancel', (_e, runId: string) => runner.cancel(runId))
 
   // ---- AI ----
   ipcMain.handle('ai:run', async (_e, req: AIRequest, sessionId?: string) => {

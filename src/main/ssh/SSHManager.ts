@@ -148,6 +148,14 @@ export class SSHManager extends EventEmitter {
     })
   }
 
+  /** One-off client connection for a host (runbooks, ad-hoc exec). Caller must end() it. */
+  async connectForHost(hostId: string): Promise<{ client: Client; host: Host }> {
+    const host = this.store.getHostRaw(hostId)
+    if (!host) throw new Error('Host not found')
+    const client = await this.connectClient(host)
+    return { client, host }
+  }
+
   // ------------------------------------------------------------------
   // shell sessions
   // ------------------------------------------------------------------

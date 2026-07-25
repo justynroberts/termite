@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0 — 2026-07-24
+
+### Added
+- **Runbooks — multi-host, multi-step orchestration.** Define ordered steps, each with its own
+  command/script, target hosts, and options; run the whole thing with live per-host output.
+  - Steps run in order; within a step, hosts run **in parallel or one at a time** (rolling)
+  - **Fail-fast or continue-on-error** per step; sequential mode stops at the first failed host
+  - Per-step **interpreter**: remote login shell (default), `bash -lc`, or **PowerShell**
+    (`-EncodedCommand`, quote-safe for Windows hosts); optional per-step timeout
+  - Live run view opens as a tab: step timeline, per-host status badges + exit codes,
+    collapsible auto-scrolling output, cancel mid-run
+  - **✨ Draft with AI**: describe the job ("update all Debian servers, reboot if needed") and
+    Claude drafts the steps — pre-checks, the change, verification — for you to review
+  - Runs over the same SSH machinery as terminals: keys, agent, jump hosts, host-key pinning
+
 ## 0.4.1 — 2026-07-24
 
 ### Fixed

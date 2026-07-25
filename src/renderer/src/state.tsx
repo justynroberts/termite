@@ -3,11 +3,35 @@ import {
   type JSX, type ReactNode
 } from 'react'
 import type {
-  AppSettings, Host, PortForward, SSHKey, SessionInfo, Snippet, TransferProgress
+  AppSettings, Host, PortForward, Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
 } from '../../shared/types'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 
-export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'settings'
+export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'runbooks' | 'settings'
+
+// ---- runbook run tracking ----
+export interface RunHostState {
+  hostId: string
+  status: 'pending' | 'running' | 'ok' | 'failed'
+  exitCode?: number
+  error?: string
+  output: string
+}
+export interface RunStepState {
+  stepId: string
+  name: string
+  status: 'pending' | 'running' | 'ok' | 'failed' | 'skipped'
+  hosts: RunHostState[]
+}
+export interface RunState {
+  runId: string
+  runbookName: string
+  status: 'running' | 'ok' | 'failed' | 'cancelled'
+  steps: RunStepState[]
+  startedAt: number
+}
+
+const MAX_HOST_OUTPUT = 200_000
 
 export interface TermPane {
   paneId: string
@@ -17,7 +41,7 @@ export interface TermPane {
 
 export interface Tab {
   id: string
-  kind: 'terminal' | 'sftp'
+  kind: 'terminal' | 'sftp' | 'runbook'
   hostId: string
   title: string
   sftpId?: string
@@ -25,6 +49,8 @@ export interface Tab {
   status: SessionInfo['status']
   /** terminal tabs: columns of stacked panes */
   columns?: TermPane[][]
+  /** runbook tabs */
+  runId?: string
 }
 
 export interface Toast {
@@ -34,6 +60,7 @@ export interface Toast {
 }
 
 export function tabStatus(tab: Tab): SessionInfo['status'] {
+  if (tab.kind === 'runbook') return tab.status
   if (tab.kind !== 'terminal' || !tab.columns) return tab.status
   const panes = tab.columns.flat()
   if (panes.some((p) => p.status === 'connected')) return 'connected'
@@ -49,6 +76,11 @@ interface AppState {
   keys: SSHKey[]
   snippets: Snippet[]
   forwards: PortForward[]
+  runbooks: Runbook[]
+  runs: Record<string, RunState>
+  refreshRunbooks(): Promise<void>
+  runRunbook(rb: Runbook): Promise<void>
+  cancelRun(runId: string): void
   activeForwards: string[]
   settings: AppSettings
   tabs: Tab[]
@@ -101,6 +133,8 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const [keys, setKeys] = useState<SSHKey[]>([])
   const [snippets, setSnippets] = useState<Snippet[]>([])
   const [forwards, setForwards] = useState<PortForward[]>([])
+  const [runbooks, setRunbooks] = useState<Runbook[]>([])
+  const [runs, setRuns] = useState<Record<string, RunState>>({})
   const [activeForwards, setActiveForwards] = useState<string[]>([])
   const [settings, setSettings] = useState<AppSettings>({ ...DEFAULT_SETTINGS })
   const [tabs, setTabs] = useState<Tab[]>([])
@@ -130,14 +164,64 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     setForwards(saved)
     setActiveForwards(active)
   }, [])
+  const refreshRunbooks = useCallback(async () => setRunbooks(await window.termite.runbooks.list()), [])
 
   useEffect(() => {
     refreshHosts()
     refreshKeys()
     refreshSnippets()
     refreshForwards()
+    refreshRunbooks()
     window.termite.settings.get().then(setSettings)
-  }, [refreshHosts, refreshKeys, refreshSnippets, refreshForwards])
+  }, [refreshHosts, refreshKeys, refreshSnippets, refreshForwards, refreshRunbooks])
+
+  // runbook execution events → run state + tab status
+  useEffect(() => {
+    return window.termite.runbooks.onEvent((ev: RunbookEvent) => {
+      setRuns((prev) => {
+        const run = prev[ev.runId]
+        if (!run) return prev
+        const next: RunState = { ...run, steps: run.steps.map((s) => ({ ...s, hosts: s.hosts.map((h) => ({ ...h })) })) }
+        const step = next.steps.find((s) => s.stepId === ev.stepId)
+        const host = step?.hosts.find((h) => h.hostId === ev.hostId)
+        switch (ev.kind) {
+          case 'step-start':
+            if (step) step.status = 'running'
+            break
+          case 'host-start':
+            if (host) host.status = 'running'
+            break
+          case 'data':
+            if (host) {
+              host.output = (host.output + (ev.data ?? '')).slice(-MAX_HOST_OUTPUT)
+            }
+            break
+          case 'host-done':
+            if (host) {
+              host.status = ev.ok ? 'ok' : 'failed'
+              host.exitCode = ev.exitCode
+              host.error = ev.error
+            }
+            break
+          case 'step-done':
+            if (step) step.status = ev.ok ? 'ok' : 'failed'
+            break
+          case 'run-done':
+            next.status = ev.cancelled ? 'cancelled' : ev.ok ? 'ok' : 'failed'
+            for (const s of next.steps) if (s.status === 'pending') s.status = 'skipped'
+            setTabs((t) =>
+              t.map((tab) =>
+                tab.runId === ev.runId
+                  ? { ...tab, status: ev.ok && !ev.cancelled ? 'connected' : 'error' }
+                  : tab
+              )
+            )
+            break
+        }
+        return { ...prev, [ev.runId]: next }
+      })
+    })
+  }, [])
 
   // session status updates → panes
   const closePaneRef = useRef<(tabId: string, paneId: string) => void>(() => undefined)
@@ -219,6 +303,33 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     ])
     setActivePaneId((m) => ({ ...m, [id]: pane.paneId }))
     setActiveTabId(id)
+  }, [])
+
+  const runRunbook = useCallback(async (rb: Runbook) => {
+    const runId = await window.termite.runbooks.run(rb.id)
+    const runState: RunState = {
+      runId,
+      runbookName: rb.name,
+      status: 'running',
+      startedAt: Date.now(),
+      steps: rb.steps.map((s) => ({
+        stepId: s.id,
+        name: s.name,
+        status: 'pending',
+        hosts: s.hostIds.map((hostId) => ({ hostId, status: 'pending', output: '' }))
+      }))
+    }
+    setRuns((prev) => ({ ...prev, [runId]: runState }))
+    const id = `tab-${++tabSeq}`
+    setTabs((t) => [
+      ...t,
+      { id, kind: 'runbook', hostId: '', title: `▶ ${rb.name}`, status: 'connecting', runId }
+    ])
+    setActiveTabId(id)
+  }, [])
+
+  const cancelRun = useCallback((runId: string) => {
+    window.termite.runbooks.cancel(runId)
   }, [])
 
   const openSftp = useCallback((host: Host) => {
@@ -352,6 +463,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const value: AppState = {
     view, setView,
     hosts, keys, snippets, forwards, activeForwards, settings,
+    runbooks, runs, refreshRunbooks, runRunbook, cancelRun,
     tabs, activeTabId, setActiveTabId,
     aiOpen, setAiOpen,
     transfers, toasts, toast,

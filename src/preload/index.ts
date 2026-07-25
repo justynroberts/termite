@@ -1,7 +1,7 @@
 import { clipboard, contextBridge, ipcRenderer } from 'electron'
 import type {
   AIRequest, AIResponse, AppSettings, FileEntry, Host, PortForward,
-  SSHKey, SessionInfo, Snippet, TransferProgress
+  Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
 } from '../shared/types'
 
 export interface TermiteAPI {
@@ -64,6 +64,14 @@ export interface TermiteAPI {
     start(id: string): Promise<void>
     stop(id: string): Promise<void>
     onClosed(cb: (id: string) => void): () => void
+  }
+  runbooks: {
+    list(): Promise<Runbook[]>
+    save(r: Runbook): Promise<void>
+    delete(id: string): Promise<void>
+    run(id: string): Promise<string>
+    cancel(runId: string): Promise<void>
+    onEvent(cb: (ev: RunbookEvent) => void): () => void
   }
   ai: {
     run(req: AIRequest, sessionId?: string): Promise<AIResponse>
@@ -149,6 +157,14 @@ const api: TermiteAPI = {
     start: (id) => ipcRenderer.invoke('forwards:start', id),
     stop: (id) => ipcRenderer.invoke('forwards:stop', id),
     onClosed: (cb) => sub('forward:closed', cb as (...args: unknown[]) => void)
+  },
+  runbooks: {
+    list: () => ipcRenderer.invoke('runbooks:list'),
+    save: (r) => ipcRenderer.invoke('runbooks:save', r),
+    delete: (id) => ipcRenderer.invoke('runbooks:delete', id),
+    run: (id) => ipcRenderer.invoke('runbooks:run', id),
+    cancel: (runId) => ipcRenderer.invoke('runbooks:cancel', runId),
+    onEvent: (cb) => sub('runbook:event', cb as (...args: unknown[]) => void)
   },
   ai: {
     run: (req, sessionId) => ipcRenderer.invoke('ai:run', req, sessionId)

@@ -114,6 +114,123 @@
 /* keep clear of the native window-controls overlay on Windows */
 .titlebar .titlebar-spacer { flex: 1; min-width: 140px; }
 
+/* ---------- runbooks ---------- */
+.modal-wide { width: min(760px, 92vw); max-height: 88vh; }
+.ai-draft-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.ai-draft-row input { flex: 1; }
+.step-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  background: var(--bg-0);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.step-card-header { display: flex; align-items: center; gap: 6px; }
+.step-card-header input { flex: 1; }
+.step-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-command {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  resize: vertical;
+  min-height: 56px;
+}
+.step-hosts { display: flex; flex-wrap: wrap; gap: 6px; }
+.host-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 12px;
+  color: var(--text-1);
+  cursor: pointer;
+  user-select: none;
+}
+.host-chip input { display: none; }
+.host-chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.step-opts { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-1); align-items: center; }
+.step-opts label { display: inline-flex; align-items: center; gap: 5px; }
+.timeout-input { width: 64px; }
+.add-step { margin-top: 12px; align-self: flex-start; display: inline-flex; gap: 6px; align-items: center; }
+
+.runbook-view { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; padding: 16px 22px; }
+.runbook-view.empty { align-items: center; justify-content: center; color: var(--text-2); }
+.run-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.run-title { font-size: 15px; font-weight: 700; }
+.run-meta { color: var(--text-2); font-size: 12px; flex: 1; }
+.run-status { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+.run-status.running { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.run-status.ok { color: var(--accent); background: var(--accent-dim); }
+.run-status.failed, .run-status.cancelled { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.danger-outline { border: 1px solid var(--danger); color: var(--danger); background: transparent; display: inline-flex; gap: 5px; align-items: center; }
+.run-steps { display: flex; flex-direction: column; gap: 12px; }
+.run-step { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-1); overflow: hidden; }
+.run-step.running { border-color: var(--warn); }
+.run-step.failed { border-color: var(--danger); }
+.run-step-header { display: flex; align-items: center; gap: 9px; padding: 9px 12px; }
+.run-step-name { font-weight: 600; flex: 1; }
+.run-badge { font-size: 11.5px; font-weight: 600; }
+.run-badge.pending, .run-badge.skipped { color: var(--text-2); }
+.run-badge.running { color: var(--warn); }
+.run-badge.ok { color: var(--accent); }
+.run-badge.failed { color: var(--danger); }
+.run-hosts { display: flex; flex-direction: column; }
+.run-host { border-top: 1px solid var(--border); }
+.run-host-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text-1);
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.run-host-header:hover { background: var(--bg-2); }
+.run-host-label { font-weight: 600; flex: 1; text-align: left; }
+.run-output {
+  margin: 0;
+  padding: 8px 14px 10px 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+  color: var(--text-0);
+  background: var(--bg-0);
+  user-select: text;
+}
+
 /* ---------- zen mode ---------- */
 .shell.zen .titlebar,
 .shell.zen .activity-bar,

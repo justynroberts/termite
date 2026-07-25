@@ -65,6 +65,16 @@ A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer
 **Snippets**
 - Save frequent commands, run them in the focused pane with one click
 
+**Runbooks — orchestrate across your fleet**
+- Multi-step, multi-host command orchestration: patch a fleet, roll a deploy, run health
+  checks — each step targets one or more hosts, in parallel or rolling one-at-a-time
+- Fail-fast or continue-on-error per step, optional timeouts, per-step interpreter
+  (login shell / bash / PowerShell for Windows hosts)
+- Live run view: step timeline, per-host status + exit codes, streaming collapsible
+  output, cancel mid-run
+- **AI drafting**: describe the job in plain English and Claude writes the steps
+  (pre-checks → change → verification) for you to review and target
+
 **Appearance**
 - Windows 11 native look: **Mica / Acrylic** window materials, rounded corners, native
   window-controls overlay; macOS vibrancy. Switchable (or fully solid) in Settings → Appearance

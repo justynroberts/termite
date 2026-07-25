@@ -206,6 +206,25 @@ export const IconSend = ({ size }: IconProps): JSX.Element =>
     size
   )
 
+export const IconChevronUp = ({ size }: IconProps): JSX.Element =>
+  svg(<polyline points="18 15 12 9 6 15" />, size)
+
+export const IconChevronDown = ({ size }: IconProps): JSX.Element =>
+  svg(<polyline points="6 9 12 15 18 9" />, size)
+
+export const IconRunbook = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <polyline points="3 5 4 7 6 4" />
+      <polyline points="3 11 4 13 6 10" />
+      <polyline points="3 17 4 19 6 16" />
+    </>,
+    size
+  )
+
 export const IconSplitRight = ({ size }: IconProps): JSX.Element =>
   svg(
     <>

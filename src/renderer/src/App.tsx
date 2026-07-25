@@ -4,12 +4,14 @@ import HostsPanel from './components/HostsPanel'
 import KeysPanel from './components/KeysPanel'
 import SnippetsPanel from './components/SnippetsPanel'
 import ForwardsPanel from './components/ForwardsPanel'
+import RunbooksPanel from './components/RunbooksPanel'
+import RunbookView from './components/RunbookView'
 import SettingsPanel from './components/SettingsPanel'
 import TerminalPane from './components/TerminalView'
 import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
 import {
-  IconForward, IconKey, IconServer, IconSettings, IconSnippet, IconSparkle,
+  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconSparkle,
   IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
@@ -18,6 +20,7 @@ const NAV: { view: View; icon: JSX.Element; title: string }[] = [
   { view: 'hosts', icon: <IconServer />, title: 'Hosts' },
   { view: 'keys', icon: <IconKey />, title: 'SSH keys' },
   { view: 'snippets', icon: <IconSnippet />, title: 'Snippets' },
+  { view: 'runbooks', icon: <IconRunbook />, title: 'Runbooks — orchestrate across hosts' },
   { view: 'forwards', icon: <IconForward />, title: 'Port forwarding' }
 ]
 
@@ -163,6 +166,7 @@ export default function App(): JSX.Element {
           {view === 'hosts' && <HostsPanel />}
           {view === 'keys' && <KeysPanel />}
           {view === 'snippets' && <SnippetsPanel />}
+          {view === 'runbooks' && <RunbooksPanel />}
           {view === 'forwards' && <ForwardsPanel />}
         </div>
       )}
@@ -268,6 +272,8 @@ export default function App(): JSX.Element {
                         </div>
                       ))}
                     </div>
+                  ) : tab.kind === 'runbook' ? (
+                    <RunbookView tab={tab} visible={tab.id === activeTabId} />
                   ) : (
                     <SftpView tab={tab} visible={tab.id === activeTabId} />
                   )}

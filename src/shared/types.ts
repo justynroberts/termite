@@ -121,8 +121,61 @@ export interface KnownHost {
   addedAt: number
 }
 
+// ---- runbooks: multi-host, multi-step command orchestration ----
+
+export interface RunbookStep {
+  id: string
+  name: string
+  /** shell script; runs via exec with a pty on each target host */
+  command: string
+  /** target hosts for this step */
+  hostIds: string[]
+  /** run across hosts concurrently (true) or one host at a time (false) */
+  parallel: boolean
+  /** keep going to the next step even if a host fails */
+  continueOnError: boolean
+  /** kill the command after N seconds (0/undefined = no timeout) */
+  timeoutSec?: number
+  /**
+   * Interpreter on the remote host. 'default' = the SSH user's login shell
+   * (bash/sh on Linux/macOS, cmd/PowerShell on Windows OpenSSH).
+   * 'bash' wraps in bash -lc; 'powershell' uses -EncodedCommand (quote-safe).
+   */
+  shell?: 'default' | 'bash' | 'powershell'
+}
+
+export interface Runbook {
+  id: string
+  name: string
+  description?: string
+  steps: RunbookStep[]
+  createdAt: number
+}
+
+export interface RunbookEvent {
+  runId: string
+  kind:
+    | 'run-start'
+    | 'step-start'
+    | 'host-start'
+    | 'data'
+    | 'host-done'
+    | 'step-done'
+    | 'run-done'
+  stepId?: string
+  hostId?: string
+  /** terminal output chunk (kind: data) */
+  data?: string
+  /** exit code (kind: host-done) */
+  exitCode?: number
+  /** step/run success (kind: step-done | run-done) */
+  ok?: boolean
+  error?: string
+  cancelled?: boolean
+}
+
 export interface AIRequest {
-  kind: 'nl2cmd' | 'explain-error' | 'explain-output' | 'summarize' | 'chat'
+  kind: 'nl2cmd' | 'explain-error' | 'explain-output' | 'summarize' | 'chat' | 'draft-runbook'
   prompt: string
   /** recent terminal output for context */
   terminalContext?: string
