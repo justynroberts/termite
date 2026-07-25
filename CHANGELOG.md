@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.4 — 2026-07-25
+
+### Fixed / Added
+- **Multi-line URLs are now first-class links.** Replaced the stock link matcher with a
+  custom provider that joins URLs across wrapped rows (soft- or hard-wrapped): the entire
+  multi-line URL underlines as one link, and a click on any of its rows opens the complete
+  URL. Verified end-to-end: clicking row 1 of a 3-row OAuth URL inside a redrawing TUI
+  delivered the byte-identical full URL to the default browser.
+- **Copy shows a confirmation toast** ("Copied N characters") — instant feedback that the
+  copy landed, and a clear signal if a keystroke never reached the terminal.
+
 ## 0.6.3 — 2026-07-25
 
 ### Fixed

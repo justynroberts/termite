@@ -1,7 +1,6 @@
 import { useEffect, useRef, type JSX } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
-import { WebLinksAddon } from '@xterm/addon-web-links'
 import { SearchAddon } from '@xterm/addon-search'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
@@ -67,36 +66,57 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
-    // Join URLs that were hard-wrapped across rows (CLIs like `claude login` print
-    // long OAuth URLs with real newlines — the matcher only sees the first row).
-    // If the matched URI runs to the right edge, append leading non-space runs of
-    // the following rows while they continue edge-to-edge.
-    const expandWrappedUrl = (uri: string): string => {
-      try {
-        const buf = term.buffer.active
-        const tail = uri.slice(-Math.min(uri.length, 40))
-        for (let row = buf.length - 1; row >= 0; row--) {
-          const text = buf.getLine(row)?.translateToString(true) ?? ''
-          if (!text.endsWith(tail)) continue
-          if (text.length < term.cols) return uri // didn't reach the edge → not wrapped
-          let joined = uri
-          for (let r = row + 1; r < buf.length; r++) {
-            const next = buf.getLine(r)?.translateToString(true) ?? ''
-            const run = /^[^\s"'<>`]+/.exec(next)?.[0]
-            if (!run) break
-            joined += run
-            // stop when the URL no longer fills the row (last fragment)
-            if (run.length < term.cols) break
+    // Custom link provider that sees URLs across wrapped rows — soft-wrapped OR
+    // hard-wrapped (CLIs like `claude login` print long OAuth URLs with real
+    // newlines). Contiguous full-width rows are treated as one paragraph, so the
+    // whole multi-line URL underlines as a single link and opens joined.
+    const URL_RE = /https?:\/\/[^\s"'`<>()[\]{}]+/g
+    term.registerLinkProvider({
+      provideLinks: (rowNum, cb) => {
+        try {
+          const buf = term.buffer.active
+          const row0 = rowNum - 1
+          let start = row0
+          while (start > 0 && (buf.getLine(start - 1)?.translateToString(true).length ?? 0) === term.cols) {
+            start--
           }
-          return joined
+          let end = row0
+          while (end < buf.length - 1 && (buf.getLine(end)?.translateToString(true).length ?? 0) === term.cols) {
+            end++
+          }
+          let joined = ''
+          const offsets: number[] = []
+          for (let r = start; r <= end; r++) {
+            offsets.push(joined.length)
+            joined += buf.getLine(r)?.translateToString(true) ?? ''
+          }
+          const toCoord = (off: number): { x: number; y: number } => {
+            let i = offsets.length - 1
+            while (i > 0 && offsets[i] > off) i--
+            return { x: off - offsets[i] + 1, y: start + i + 1 }
+          }
+          const links: {
+            range: { start: { x: number; y: number }; end: { x: number; y: number } }
+            text: string
+            activate: (e: MouseEvent, text: string) => void
+          }[] = []
+          for (const m of joined.matchAll(URL_RE)) {
+            const s = m.index ?? 0
+            const sc = toCoord(s)
+            const ec = toCoord(s + m[0].length - 1)
+            if (rowNum < sc.y || rowNum > ec.y) continue
+            links.push({
+              range: { start: sc, end: ec },
+              text: m[0],
+              activate: (_e, text) => window.termite.openExternal(text)
+            })
+          }
+          cb(links.length ? links : undefined)
+        } catch {
+          cb(undefined)
         }
-      } catch {
-        /* fall through to the original match */
       }
-      return uri
-    }
-    // open URLs in the OS browser (the addon's default window.open is blocked in Electron)
-    term.loadAddon(new WebLinksAddon((_event, uri) => window.termite.openExternal(expandWrappedUrl(uri))))
+    })
     term.loadAddon(new SearchAddon())
     term.open(containerRef.current)
     try {
@@ -129,13 +149,18 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       try {
         const sel = effectiveSelection()
         // never clobber the clipboard with an empty/whitespace-only selection
-        if (sel.trim().length > 0) window.termite.clipboard.writeText(sel)
+        if (sel.trim().length > 0) {
+          window.termite.clipboard.writeText(sel)
+          // visible confirmation — also our diagnostic signal: copy without a
+          // toast means the keystroke never reached the terminal at all
+          toast(`Copied ${sel.length} characters`)
+        }
         // consume the stash so a later Ctrl+C without a visible selection
         // sends SIGINT as expected instead of silently re-copying
         stashedSelection = ''
         // selection stays visible after copy (Windows Terminal behavior)
       } catch (err) {
-        console.error('copy failed', err)
+        toast(`Copy failed: ${err instanceof Error ? err.message : err}`, 'error')
       }
     }
     const pasteClipboard = (): void => {
