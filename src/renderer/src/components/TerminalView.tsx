@@ -87,10 +87,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     // Ctrl+V / Ctrl+Shift+V → paste. Ctrl+Shift+C → copy. Cmd variants on macOS.
     const copySelection = (): void => {
       try {
-        if (term.hasSelection()) {
-          window.termite.clipboard.writeText(term.getSelection())
-          term.clearSelection()
-        }
+        const sel = term.getSelection()
+        // never clobber the clipboard with an empty/whitespace-only selection
+        if (sel.trim().length > 0) window.termite.clipboard.writeText(sel)
+        // selection stays visible after copy (Windows Terminal behavior) —
+        // a second Ctrl+C re-copies instead of surprising with SIGINT
       } catch (err) {
         console.error('copy failed', err)
       }
@@ -107,7 +108,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       if (ev.type !== 'keydown') return true
       const mod = ev.ctrlKey || ev.metaKey
       if (!mod) return true
-      if (ev.code === 'KeyC' && (ev.shiftKey || term.hasSelection())) {
+      if (ev.code === 'KeyC' && (ev.shiftKey || term.getSelection().trim().length > 0)) {
         ev.preventDefault()
         copySelection()
         return false

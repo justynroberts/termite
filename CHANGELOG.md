@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.2 — 2026-07-25
+
+### Fixed
+- **Copy behavior hardened** (verified end-to-end with live input this time): selection stays
+  visible after copy (Windows Terminal behavior — a second Ctrl+C re-copies instead of sending
+  SIGINT), and empty/whitespace-only selections can no longer clobber the clipboard or eat the
+  Ctrl+C. Copy requires a real (non-whitespace) selection; paste, right-click copy/paste,
+  Ctrl+Shift+C/V all confirmed working against the system clipboard.
+
 ## 0.6.1 — 2026-07-25
 
 ### Fixed
