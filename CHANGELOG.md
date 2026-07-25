@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.3 — 2026-07-25
+
+### Fixed
+- **Copying from TUI apps (the real copy/paste bug).** CLIs that continuously redraw —
+  `claude login`, spinners, htop, vim — invalidated your selection between mouse-up and
+  Ctrl+C, so copy grabbed nothing and the keystroke fell through as SIGINT into the app.
+  The selection text is now stashed the instant you make it; Ctrl+C / right-click copy use
+  the stash (15s TTL, consumed on use, dropped if you click away), so copy works even while
+  the app is repainting under your selection.
+- **Hard-wrapped URLs now open complete.** OAuth-style URLs printed across multiple lines
+  (e.g. the Claude login link) are re-joined across rows when activated, instead of opening
+  only the first line as a malformed URL.
+
 ## 0.6.2 — 2026-07-25
 
 ### Fixed

@@ -67,8 +67,36 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
+    // Join URLs that were hard-wrapped across rows (CLIs like `claude login` print
+    // long OAuth URLs with real newlines — the matcher only sees the first row).
+    // If the matched URI runs to the right edge, append leading non-space runs of
+    // the following rows while they continue edge-to-edge.
+    const expandWrappedUrl = (uri: string): string => {
+      try {
+        const buf = term.buffer.active
+        const tail = uri.slice(-Math.min(uri.length, 40))
+        for (let row = buf.length - 1; row >= 0; row--) {
+          const text = buf.getLine(row)?.translateToString(true) ?? ''
+          if (!text.endsWith(tail)) continue
+          if (text.length < term.cols) return uri // didn't reach the edge → not wrapped
+          let joined = uri
+          for (let r = row + 1; r < buf.length; r++) {
+            const next = buf.getLine(r)?.translateToString(true) ?? ''
+            const run = /^[^\s"'<>`]+/.exec(next)?.[0]
+            if (!run) break
+            joined += run
+            // stop when the URL no longer fills the row (last fragment)
+            if (run.length < term.cols) break
+          }
+          return joined
+        }
+      } catch {
+        /* fall through to the original match */
+      }
+      return uri
+    }
     // open URLs in the OS browser (the addon's default window.open is blocked in Electron)
-    term.loadAddon(new WebLinksAddon((_event, uri) => window.termite.openExternal(uri)))
+    term.loadAddon(new WebLinksAddon((_event, uri) => window.termite.openExternal(expandWrappedUrl(uri))))
     term.loadAddon(new SearchAddon())
     term.open(containerRef.current)
     try {
@@ -85,13 +113,27 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     // --- clipboard: Windows Terminal semantics ---
     // Ctrl+C with a selection → copy (no SIGINT); without → SIGINT as normal.
     // Ctrl+V / Ctrl+Shift+V → paste. Ctrl+Shift+C → copy. Cmd variants on macOS.
+    // TUI apps (ink spinners, htop, vim) redraw the rows under a selection several
+    // times a second, which can invalidate the selection's text between mouse-up and
+    // Ctrl+C. Stash the text the moment the selection is made so copy always has it.
+    let stashedSelection = ''
+    let stashedAt = 0
+    const STASH_TTL = 15_000
+    const effectiveSelection = (): string => {
+      const live = term.getSelection()
+      if (live.trim().length > 0) return live
+      if (stashedSelection && Date.now() - stashedAt < STASH_TTL) return stashedSelection
+      return ''
+    }
     const copySelection = (): void => {
       try {
-        const sel = term.getSelection()
+        const sel = effectiveSelection()
         // never clobber the clipboard with an empty/whitespace-only selection
         if (sel.trim().length > 0) window.termite.clipboard.writeText(sel)
-        // selection stays visible after copy (Windows Terminal behavior) —
-        // a second Ctrl+C re-copies instead of surprising with SIGINT
+        // consume the stash so a later Ctrl+C without a visible selection
+        // sends SIGINT as expected instead of silently re-copying
+        stashedSelection = ''
+        // selection stays visible after copy (Windows Terminal behavior)
       } catch (err) {
         console.error('copy failed', err)
       }
@@ -108,7 +150,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       if (ev.type !== 'keydown') return true
       const mod = ev.ctrlKey || ev.metaKey
       if (!mod) return true
-      if (ev.code === 'KeyC' && (ev.shiftKey || term.getSelection().trim().length > 0)) {
+      if (ev.code === 'KeyC' && (ev.shiftKey || effectiveSelection().length > 0)) {
         ev.preventDefault()
         copySelection()
         return false
@@ -122,8 +164,14 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     })
 
     term.onSelectionChange(() => {
-      if (settingsRef.current.copyOnSelect && term.hasSelection()) {
-        window.termite.clipboard.writeText(term.getSelection())
+      const sel = term.getSelection()
+      if (sel.trim().length > 0) {
+        stashedSelection = sel
+        stashedAt = Date.now()
+        if (settingsRef.current.copyOnSelect) window.termite.clipboard.writeText(sel)
+      } else if (!term.hasSelection()) {
+        // deliberate clear (click elsewhere) — drop the stash so Ctrl+C means SIGINT again
+        stashedSelection = ''
       }
     })
 
@@ -169,7 +217,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     // right-click: copy selection if there is one, otherwise paste
     const onContextMenu = (e: MouseEvent): void => {
       e.preventDefault()
-      if (term.hasSelection()) copySelection()
+      if (effectiveSelection().length > 0) copySelection()
       else pasteClipboard()
     }
     el.addEventListener('contextmenu', onContextMenu)
