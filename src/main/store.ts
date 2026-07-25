@@ -11,6 +11,7 @@ interface StoreShape {
   forwards: PortForward[]
   knownHosts: KnownHost[]
   runbooks: Runbook[]
+  runbooksSeeded?: boolean
   settings: AppSettings
 }
 
@@ -56,6 +57,78 @@ export class Store {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     this.file = join(dir, 'termite-store.json')
     this.data = this.load()
+    this.seedSampleRunbooks()
+  }
+
+  /** One-time starter runbooks — safe maintenance/diagnostic templates (no hosts assigned). */
+  private seedSampleRunbooks(): void {
+    if (this.data.runbooksSeeded) return
+    const step = (
+      name: string, command: string,
+      opts: { parallel?: boolean; continueOnError?: boolean; timeoutSec?: number } = {}
+    ): import('../shared/types').RunbookStep => ({
+      id: `seed-${Math.random().toString(36).slice(2, 10)}`,
+      name,
+      command,
+      hostIds: [],
+      parallel: opts.parallel ?? true,
+      continueOnError: opts.continueOnError ?? false,
+      timeoutSec: opts.timeoutSec,
+      shell: 'default'
+    })
+
+    const samples: Runbook[] = [
+      {
+        id: 'sample-health-check',
+        name: 'Health check',
+        description: 'Read-only fleet snapshot: load, disk, memory, failed services',
+        createdAt: Date.now(),
+        steps: [
+          step('Uptime & load', 'uptime && echo --- && free -h 2>/dev/null || vm_stat', { continueOnError: true }),
+          step('Disk usage', 'df -h | grep -vE "tmpfs|devfs|overlay"', { continueOnError: true }),
+          step('Failed services', 'systemctl --failed --no-pager 2>/dev/null || echo "(no systemd)"', { continueOnError: true })
+        ]
+      },
+      {
+        id: 'sample-apt-update',
+        name: 'System update (apt)',
+        description: 'Debian/Ubuntu: check, apply security-safe upgrades one host at a time, verify',
+        createdAt: Date.now(),
+        steps: [
+          step('Pre-check: disk & pending updates', 'df -h / && sudo -n apt-get update -qq && apt list --upgradable 2>/dev/null | head -25', { timeoutSec: 180 }),
+          step('Apply upgrades (rolling)', 'sudo -n DEBIAN_FRONTEND=noninteractive apt-get upgrade -y', { parallel: false, timeoutSec: 1200 }),
+          step('Verify', 'uname -r && (test -f /var/run/reboot-required && cat /var/run/reboot-required) || echo "No reboot required"', { continueOnError: true })
+        ]
+      },
+      {
+        id: 'sample-yum-update',
+        name: 'System update (dnf/yum)',
+        description: 'RHEL/Fedora/Amazon Linux: check, apply updates one host at a time, verify',
+        createdAt: Date.now(),
+        steps: [
+          step('Pre-check: disk & pending updates', 'df -h / && (sudo -n dnf -q check-update || sudo -n yum -q check-update || true) | head -25', { timeoutSec: 300 }),
+          step('Apply updates (rolling)', 'sudo -n dnf upgrade -y 2>/dev/null || sudo -n yum update -y', { parallel: false, timeoutSec: 1800 }),
+          step('Verify', 'uname -r && (command -v needs-restarting >/dev/null && sudo -n needs-restarting -r || echo "reboot check unavailable")', { continueOnError: true })
+        ]
+      },
+      {
+        id: 'sample-docker-prune',
+        name: 'Docker cleanup (safe prune)',
+        description: 'Reclaim space: stopped containers, dangling images, unused networks/build cache',
+        createdAt: Date.now(),
+        steps: [
+          step('Before: usage', 'docker system df', { timeoutSec: 60 }),
+          step('Prune (no volumes, no in-use images)', 'docker system prune -f', { parallel: false, timeoutSec: 600 }),
+          step('After: usage', 'docker system df', { continueOnError: true })
+        ]
+      }
+    ]
+
+    // don't duplicate if the user already made runbooks with these ids
+    const existing = new Set(this.data.runbooks.map((r) => r.id))
+    for (const s of samples) if (!existing.has(s.id)) this.data.runbooks.push(s)
+    this.data.runbooksSeeded = true
+    this.persist()
   }
 
   private load(): StoreShape {

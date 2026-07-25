@@ -2,7 +2,9 @@ import { useEffect, useState, type JSX } from 'react'
 import { v4 as uuid } from 'uuid'
 import type { Runbook, RunbookStep } from '../../../shared/types'
 import { useApp } from '../state'
-import { IconPlay, IconPlus, IconSparkle, IconTrash, IconEdit, IconChevronUp, IconChevronDown } from '../icons'
+import {
+  IconChevronDown, IconChevronUp, IconEdit, IconPlay, IconPlus, IconRunbook, IconSparkle, IconTrash
+} from '../icons'
 
 function newStep(): RunbookStep {
   return {
@@ -45,9 +47,9 @@ export default function RunbooksPanel(): JSX.Element {
   }
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <span className="panel-title">RUNBOOKS</span>
+    <>
+      <div className="sidebar-header">
+        <span className="sidebar-title">Runbooks</span>
         <button
           className="icon-btn"
           title="New runbook"
@@ -55,19 +57,19 @@ export default function RunbooksPanel(): JSX.Element {
             setEditing({ id: uuid(), name: '', description: '', steps: [newStep()], createdAt: Date.now() })
           }
         >
-          <IconPlus />
+          <IconPlus size={16} />
         </button>
       </div>
-      <div className="panel-body">
+      <div className="sidebar-body">
         {runbooks.length === 0 && (
-          <div className="panel-empty">
+          <div style={{ padding: '20px 10px', color: 'var(--text-2)', fontSize: 13, textAlign: 'center' }}>
             Orchestrate commands across hosts in ordered steps — updates, deploys, health checks.
-            <br />
-            <br />＋ to create one, or draft it with AI.
+            Create one with ＋ or draft it with AI.
           </div>
         )}
         {runbooks.map((rb) => (
           <div key={rb.id} className="panel-list-item" onDoubleClick={() => run(rb)} title="Double-click to run">
+            <IconRunbook size={15} />
             <div className="info">
               <div className="name">{rb.name || '(unnamed)'}</div>
               <div className="meta">
@@ -99,7 +101,7 @@ export default function RunbooksPanel(): JSX.Element {
           }}
         />
       )}
-    </div>
+    </>
   )
 }
 
