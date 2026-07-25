@@ -1,4 +1,4 @@
-import { clipboard, contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AIRequest, AIResponse, AppSettings, FileEntry, Host, PortForward,
   Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
@@ -87,6 +87,7 @@ export interface TermiteAPI {
     writeText(text: string): void
   }
   appInfo(): Promise<{ version: string; electron: string; node: string; platform: string }>
+  openExternal(url: string): Promise<void>
   platform: string
 }
 
@@ -177,10 +178,11 @@ const api: TermiteAPI = {
     setFullscreen: (on) => ipcRenderer.invoke('window:set-fullscreen', on)
   },
   clipboard: {
-    readText: () => clipboard.readText(),
-    writeText: (text) => clipboard.writeText(text)
+    readText: () => ipcRenderer.sendSync('clipboard:read'),
+    writeText: (text) => ipcRenderer.send('clipboard:write', text)
   },
   appInfo: () => ipcRenderer.invoke('app:info'),
+  openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
   platform: process.platform
 }
 

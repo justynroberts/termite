@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, clipboard, ipcMain, shell } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { Store } from './store'
@@ -46,9 +46,18 @@ function createWindow(): void {
   mainWindow.on('closed', () => (mainWindow = null))
 
   // open external links in the OS browser, never in-app
+  const openExternal = (url: string): void => {
+    if (/^(https?:|mailto:)/i.test(url)) void shell.openExternal(url)
+  }
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) shell.openExternal(url)
+    openExternal(url)
     return { action: 'deny' }
+  })
+  // anchor clicks (mailto:, plain hrefs) must never navigate the app window
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (process.env['ELECTRON_RENDERER_URL'] && url.startsWith(process.env['ELECTRON_RENDERER_URL'])) return
+    e.preventDefault()
+    openExternal(url)
   })
 
   if (process.env['ELECTRON_RENDERER_URL']) {
@@ -68,6 +77,16 @@ app.whenReady().then(() => {
   ssh = new SSHManager(store)
   registerIpc(store, ssh, () => mainWindow)
 
+  // clipboard lives in the main process — bulletproof on every platform.
+  // read is sync (paste needs the text immediately in the key handler).
+  ipcMain.on('clipboard:read', (e) => {
+    e.returnValue = clipboard.readText()
+  })
+  ipcMain.on('clipboard:write', (_e, text: string) => clipboard.writeText(text ?? ''))
+
+  ipcMain.handle('shell:open-external', (_e, url: string) => {
+    if (/^https?:/i.test(url)) void shell.openExternal(url)
+  })
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(),
     electron: process.versions.electron,

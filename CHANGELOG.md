@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.1 — 2026-07-25
+
+### Fixed
+- **Copy/paste made bulletproof**: clipboard operations now go through the main process over
+  IPC (the renderer-side clipboard module could be unavailable at runtime, silently killing
+  both copy and paste). Key handlers are also defensive — a clipboard failure can never break
+  terminal input again.
+- **Hyperlinks open in your browser**: xterm's link addon opens links via a blank
+  `window.open()` that Electron blocked before the URL was known. Links in the terminal now go
+  straight to the OS browser; `mailto:` links (e.g. in the About box) open your mail app
+  instead of navigating the app window.
+- **Runbook connections are force-terminated at end of run**: every SSH channel and client is
+  swept closed when a run finishes (success, failure, or cancel), with a 3-second grace before
+  the socket is severed — no lingering connections on your servers.
+
 ## 0.6.0 — 2026-07-25
 
 ### Added

@@ -95,6 +95,32 @@ export class RunbookRunner {
       }
     }
 
+    // hard teardown: no SSH connection may outlive its run, regardless of how it ended
+    for (const ch of state.channels) {
+      try {
+        ch.close()
+      } catch {
+        /* already closed */
+      }
+    }
+    state.channels.clear()
+    for (const c of state.clients) {
+      try {
+        c.end()
+        // if the socket doesn't close gracefully within 3s, sever it
+        setTimeout(() => {
+          try {
+            ;(c as unknown as { destroy?: () => void }).destroy?.()
+          } catch {
+            /* gone */
+          }
+        }, 3000)
+      } catch {
+        /* already gone */
+      }
+    }
+    state.clients.clear()
+
     this.send({ runId, kind: 'run-done', ok: runOk && !state.cancelled, cancelled: state.cancelled })
     this.runs.delete(runId)
   }

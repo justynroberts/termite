@@ -67,7 +67,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
-    term.loadAddon(new WebLinksAddon())
+    // open URLs in the OS browser (the addon's default window.open is blocked in Electron)
+    term.loadAddon(new WebLinksAddon((_event, uri) => window.termite.openExternal(uri)))
     term.loadAddon(new SearchAddon())
     term.open(containerRef.current)
     try {
@@ -85,14 +86,22 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     // Ctrl+C with a selection → copy (no SIGINT); without → SIGINT as normal.
     // Ctrl+V / Ctrl+Shift+V → paste. Ctrl+Shift+C → copy. Cmd variants on macOS.
     const copySelection = (): void => {
-      if (term.hasSelection()) {
-        window.termite.clipboard.writeText(term.getSelection())
-        term.clearSelection()
+      try {
+        if (term.hasSelection()) {
+          window.termite.clipboard.writeText(term.getSelection())
+          term.clearSelection()
+        }
+      } catch (err) {
+        console.error('copy failed', err)
       }
     }
     const pasteClipboard = (): void => {
-      const text = window.termite.clipboard.readText()
-      if (text) term.paste(text)
+      try {
+        const text = window.termite.clipboard.readText()
+        if (text) term.paste(text)
+      } catch (err) {
+        console.error('paste failed', err)
+      }
     }
     term.attachCustomKeyEventHandler((ev) => {
       if (ev.type !== 'keydown') return true
