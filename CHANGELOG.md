@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0 — 2026-07-25
+
+### Added
+- **About box** — click the 🐜 in the title bar: version + runtime info, author
+  (justyn@fintonlabs.com), MIT license. Also summarized at the top of Settings.
+- MIT `LICENSE` file; package author metadata.
+
+### Changed (0.5.1–0.5.2, rolled into this release)
+- Afacad UI webfont (bundled), larger type scale, runbook editor/run-view spacing polish
+- Win11 glass (translucent + blur) on runbook step cards and run steps
+- Runbooks panel header aligned with the other sidebar panels
+- Four safe starter runbooks seeded: Health check, System update (apt), System update
+  (dnf/yum), Docker cleanup (safe prune)
+
 ## 0.5.0 — 2026-07-24
 
 ### Added

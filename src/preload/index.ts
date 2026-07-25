@@ -86,6 +86,7 @@ export interface TermiteAPI {
     readText(): string
     writeText(text: string): void
   }
+  appInfo(): Promise<{ version: string; electron: string; node: string; platform: string }>
   platform: string
 }
 
@@ -179,6 +180,7 @@ const api: TermiteAPI = {
     readText: () => clipboard.readText(),
     writeText: (text) => clipboard.writeText(text)
   },
+  appInfo: () => ipcRenderer.invoke('app:info'),
   platform: process.platform
 }
 

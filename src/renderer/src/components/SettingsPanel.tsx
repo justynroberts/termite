@@ -26,6 +26,16 @@ export default function SettingsPanel(): JSX.Element {
   return (
     <div className="settings-page">
       <div className="settings-section">
+        <h3>About</h3>
+        <div className="hint" style={{ lineHeight: 1.7 }}>
+          <strong style={{ color: 'var(--text-0)' }}>Termite</strong> — the AI-first SSH client.
+          Click the 🐜 in the title bar for version details.
+          <br />
+          Written by justyn@fintonlabs.com · MIT License · Enjoy!
+        </div>
+      </div>
+
+      <div className="settings-section">
         <h3>Appearance</h3>
         <div className="form-grid">
           <label>App theme</label>

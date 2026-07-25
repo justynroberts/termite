@@ -1,9 +1,9 @@
 {
   "name": "termite",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Termite — a modern, AI-first SSH client for Mac and Windows",
   "main": "out/main/index.js",
-  "author": "Termite",
+  "author": "Justyn Roberts <justyn@fintonlabs.com>",
   "license": "MIT",
   "private": true,
   "scripts": {

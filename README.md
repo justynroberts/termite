@@ -1,6 +1,18 @@
 # 🐜 Termite
 
-A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer, tunnels, and a Claude-powered copilot — in one fast desktop app.
+A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer, tunnels,
+multi-host runbooks, and a Claude-powered copilot — in one fast desktop app.
+
+**MIT licensed** · written by [justyn@fintonlabs.com](mailto:justyn@fintonlabs.com) · enjoy!
+
+## Install
+
+Grab the latest installer from **[Releases](../../releases)**:
+
+- **Windows**: `Termite-Setup-<ver>.exe` (installer) or `Termite-Portable-<ver>.exe` (no install)
+- **macOS**: `Termite-<ver>-mac.dmg` (universal — Apple Silicon + Intel)
+
+Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → right-click → *Open* (first launch only).
 
 ## Features
 
@@ -140,3 +152,7 @@ Regenerate it after design tweaks with `npm run icon`.
 - The renderer never sees stored secrets — all SSH happens in the main process behind a typed IPC bridge with `contextIsolation` on.
 - Host keys are pinned on first use; a changed fingerprint refuses the connection and warns you.
 - Your Anthropic API key is only ever sent to the Anthropic API.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright © 2026 Justyn Roberts <justyn@fintonlabs.com>. Enjoy! 🐜

@@ -68,6 +68,13 @@ app.whenReady().then(() => {
   ssh = new SSHManager(store)
   registerIpc(store, ssh, () => mainWindow)
 
+  ipcMain.handle('app:info', () => ({
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    node: process.versions.node,
+    platform: process.platform
+  }))
+
   // window chrome effects (Win11 Mica/Acrylic, native controls overlay tinting)
   ipcMain.handle('window:capabilities', () => ({
     material: supportsMaterial,

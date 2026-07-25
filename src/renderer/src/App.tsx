@@ -10,6 +10,7 @@ import SettingsPanel from './components/SettingsPanel'
 import TerminalPane from './components/TerminalView'
 import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
+import AboutModal from './components/AboutModal'
 import {
   IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconSparkle,
   IconSplitDown, IconSplitRight, IconX
@@ -33,6 +34,7 @@ export default function App(): JSX.Element {
 
   const [materialSupported, setMaterialSupported] = useState(false)
   const [zen, setZen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   useEffect(() => {
     window.termite.windowFx.capabilities().then((c) => setMaterialSupported(c.material))
@@ -122,7 +124,9 @@ export default function App(): JSX.Element {
         </button>
       )}
       <div className={`titlebar ${window.termite.platform === 'darwin' ? 'mac' : ''}`}>
-        <span className="titlebar-logo">🐜</span>
+        <button className="titlebar-logo" title="About Termite" onClick={() => setAboutOpen(true)}>
+          🐜
+        </button>
         <span className="titlebar-title">Termite</span>
         {activeTab && <span className="titlebar-sub">— {activeTab.title}</span>}
         <span className="titlebar-spacer" />
@@ -307,6 +311,7 @@ export default function App(): JSX.Element {
       </div>
 
       {aiOpen && settings.aiEnabled && <AIDrawer />}
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
 
       <div className="toast-stack">
         {toasts.map((t) => (

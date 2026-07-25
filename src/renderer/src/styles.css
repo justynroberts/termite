@@ -97,7 +97,35 @@
   border-bottom: 1px solid var(--border);
 }
 .titlebar.mac { padding-left: 80px; }
-.titlebar .titlebar-logo { font-size: 15px; line-height: 1; }
+.titlebar .titlebar-logo {
+  font-size: 15px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 6px;
+  -webkit-app-region: no-drag;
+}
+.titlebar .titlebar-logo:hover { background: var(--bg-3); }
+
+.about-modal { width: 360px; text-align: center; padding-top: 26px; }
+.about-logo { font-size: 52px; line-height: 1; margin-bottom: 10px; }
+.about-name { font-size: 24px; font-weight: 700; letter-spacing: 0.01em; }
+.about-tagline { color: var(--text-1); font-size: 14.5px; margin-top: 2px; }
+.about-version { color: var(--text-2); font-size: 13px; margin: 10px 0 4px; }
+.about-runtime { font-size: 12px; }
+.about-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 24px 6px;
+  font-size: 14.5px;
+  color: var(--text-1);
+}
+.about-rows a { color: var(--accent); text-decoration: none; }
+.about-rows a:hover { text-decoration: underline; }
+.about-enjoy { font-size: 15px; margin-top: 6px; color: var(--text-0); font-weight: 600; }
 .titlebar .titlebar-title {
   font-size: 14.5px;
   font-weight: 600;
