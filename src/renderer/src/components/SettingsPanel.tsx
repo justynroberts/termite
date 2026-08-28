@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import type { AppSettings } from '../../../shared/types'
 import { useApp } from '../state'
 import { TERMINAL_FONTS, TERMINAL_THEMES } from '../themes'
@@ -7,14 +7,26 @@ export default function SettingsPanel(): JSX.Element {
   const { settings, saveSettings, toast } = useApp()
   const [form, setForm] = useState<AppSettings>(settings)
   const [dirty, setDirty] = useState(false)
+  const appliedSettings = useRef(settings)
 
   useEffect(() => {
+    appliedSettings.current = settings
     if (!dirty) setForm(settings)
   }, [settings, dirty])
 
   const set = <K extends keyof AppSettings>(k: K, v: AppSettings[K]): void => {
     setForm((f) => ({ ...f, [k]: v }))
     setDirty(true)
+  }
+
+  const applyAppearance = <K extends 'theme' | 'windowEffect' | 'terminalTheme'>(
+    key: K,
+    value: AppSettings[K]
+  ): void => {
+    const next = { ...appliedSettings.current, [key]: value }
+    appliedSettings.current = next
+    setForm((current) => ({ ...current, [key]: value }))
+    void saveSettings(next).catch(() => toast('Could not apply appearance setting', 'error'))
   }
 
   const save = async (): Promise<void> => {
@@ -39,7 +51,7 @@ export default function SettingsPanel(): JSX.Element {
         <h3>Appearance</h3>
         <div className="form-grid">
           <label>App theme</label>
-          <select value={form.theme} onChange={(e) => set('theme', e.target.value as AppSettings['theme'])}>
+          <select value={form.theme} onChange={(e) => applyAppearance('theme', e.target.value as AppSettings['theme'])}>
             <option value="dark">Dark</option>
             <option value="light">Light</option>
           </select>
@@ -47,7 +59,7 @@ export default function SettingsPanel(): JSX.Element {
           <div>
             <select
               value={form.windowEffect}
-              onChange={(e) => set('windowEffect', e.target.value as AppSettings['windowEffect'])}
+              onChange={(e) => applyAppearance('windowEffect', e.target.value as AppSettings['windowEffect'])}
             >
               <option value="mica">Mica — subtle desktop tint (Windows 11)</option>
               <option value="acrylic">Acrylic — frosted glass blur</option>
@@ -67,7 +79,7 @@ export default function SettingsPanel(): JSX.Element {
                 key={t.id}
                 className={`theme-card ${form.terminalTheme === t.id ? 'selected' : ''}`}
                 style={{ background: t.theme.background }}
-                onClick={() => set('terminalTheme', t.id)}
+                onClick={() => applyAppearance('terminalTheme', t.id)}
                 title={t.name}
               >
                 <span className="theme-sample" style={{ color: t.theme.foreground }}>
