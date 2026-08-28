@@ -43,7 +43,7 @@ export default function KeysPanel(): JSX.Element {
   }
 
   const copyPublic = async (publicKey: string): Promise<void> => {
-    await navigator.clipboard.writeText(publicKey)
+    window.termite.clipboard.writeText(publicKey)
     toast('Public key copied — paste it into ~/.ssh/authorized_keys on your server')
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
@@ -6,7 +6,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
-import { IconX } from '../icons'
+import { IconCopy, IconExternalLink, IconPaste, IconX } from '../icons'
 
 /** #rrggbb → rgba(...) with alpha, for glass mode */
 function withAlpha(hex: string | undefined, alpha: number): string {
@@ -42,7 +42,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
   const startedRef = useRef(false)
-  const { settings, updatePane, setActivePane, closePane, toast } = useApp()
+  const copyRef = useRef<() => void>(() => undefined)
+  const pasteRef = useRef<(submit?: boolean) => void>(() => undefined)
+  const [selectionLength, setSelectionLength] = useState(0)
+  const [authUrl, setAuthUrl] = useState('')
+  const { settings, updatePane, setActivePane, closePane, broadcastTerminalInput, toast } = useApp()
   const settingsRef = useRef(settings)
   settingsRef.current = settings
 
@@ -154,6 +158,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           // visible confirmation — also our diagnostic signal: copy without a
           // toast means the keystroke never reached the terminal at all
           toast(`Copied ${sel.length} characters`)
+          setSelectionLength(0)
         }
         // consume the stash so a later Ctrl+C without a visible selection
         // sends SIGINT as expected instead of silently re-copying
@@ -163,14 +168,27 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
         toast(`Copy failed: ${err instanceof Error ? err.message : err}`, 'error')
       }
     }
-    const pasteClipboard = (): void => {
+    const pasteClipboard = (submit = false): void => {
       try {
         const text = window.termite.clipboard.readText()
-        if (text) term.paste(text)
+        if (!text) {
+          toast('Clipboard is empty', 'warn')
+          return
+        }
+        const lines = text.replace(/\r\n/g, '\n').split('\n')
+        if (lines.length > 2 && !confirm(`Paste ${lines.length} lines into ${tab.title}?\n\nThe remote shell may execute them immediately.`)) {
+          term.focus()
+          return
+        }
+        term.paste(submit ? text.trim() : text)
+        if (submit) term.input('\r')
+        term.focus()
       } catch (err) {
-        console.error('paste failed', err)
+        toast(`Paste failed: ${err instanceof Error ? err.message : err}`, 'error')
       }
     }
+    copyRef.current = copySelection
+    pasteRef.current = pasteClipboard
     term.attachCustomKeyEventHandler((ev) => {
       if (ev.type !== 'keydown') return true
       const mod = ev.ctrlKey || ev.metaKey
@@ -193,10 +211,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       if (sel.trim().length > 0) {
         stashedSelection = sel
         stashedAt = Date.now()
+        setSelectionLength(sel.length)
         if (settingsRef.current.copyOnSelect) window.termite.clipboard.writeText(sel)
-      } else if (!term.hasSelection()) {
-        // deliberate clear (click elsewhere) — drop the stash so Ctrl+C means SIGINT again
-        stashedSelection = ''
       }
     })
 
@@ -213,8 +229,33 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           return
         }
         updatePane(tab.id, pane.paneId, { sessionId, status: 'connected' })
-        unsubData = window.termite.ssh.onData(sessionId, (data) => term.write(data))
-        term.onData((data) => window.termite.ssh.write(sessionId, data))
+        unsubData = window.termite.ssh.onData(sessionId, (data) => {
+          term.write(data, () => {
+            // Read rendered rows rather than raw chunks: xterm has already handled
+            // cursor movement and TUI repainting, so this reconstructs exactly what
+            // the user sees—including hard-wrapped OAuth URLs.
+            const buf = term.buffer.active
+            const first = Math.max(0, buf.length - 80)
+            const paragraphs: string[] = []
+            let paragraph = ''
+            for (let row = first; row < buf.length; row++) {
+              const line = buf.getLine(row)?.translateToString(true) ?? ''
+              paragraph += line
+              if (line.length < term.cols) {
+                paragraphs.push(paragraph)
+                paragraph = ''
+              }
+            }
+            if (paragraph) paragraphs.push(paragraph)
+            const urls = paragraphs.flatMap((text) => text.match(/https?:\/\/[^\s"'`<>]+/g) ?? [])
+            const candidate = [...urls].reverse().find((url) => /oauth|authorize|login|device/i.test(url))
+            if (candidate) setAuthUrl(candidate.replace(/[),.;]+$/, ''))
+          })
+        })
+        term.onData((data) => {
+          window.termite.ssh.write(sessionId, data)
+          broadcastTerminalInput(tab.id, pane.paneId, data)
+        })
         term.onResize(({ cols, rows }) => window.termite.ssh.resize(sessionId, cols, rows))
         term.focus()
       })
@@ -255,6 +296,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       unsubData?.()
       term.dispose()
       termRef.current = null
+      copyRef.current = () => undefined
+      pasteRef.current = () => undefined
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -299,6 +342,46 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       style={{ ['--term-bg' as string]: termBg }}
       ref={containerRef}
     >
+      {active && (
+        <div className="terminal-actions" onMouseDown={(e) => e.preventDefault()}>
+          <button
+            className="terminal-action"
+            title={selectionLength ? `Copy ${selectionLength} selected characters` : 'Select terminal text to copy'}
+            disabled={!selectionLength}
+            onClick={() => copyRef.current()}
+          >
+            <IconCopy size={13} /> Copy
+          </button>
+          <button className="terminal-action" title="Paste from clipboard" onClick={() => pasteRef.current()}>
+            <IconPaste size={13} /> Paste
+          </button>
+        </div>
+      )}
+      {active && authUrl && (
+        <div className="auth-handoff">
+          <div className="auth-handoff-copy">
+            <strong>Authentication link detected</strong>
+            <span>Open it in your browser, finish signing in, then paste the returned code here.</span>
+          </div>
+          <button
+            className="btn primary"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => window.termite.openExternal(authUrl)}
+          >
+            <IconExternalLink size={14} /> Open browser
+          </button>
+          <button
+            className="btn"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => pasteRef.current(true)}
+          >
+            <IconPaste size={14} /> Paste &amp; submit
+          </button>
+          <button className="icon-btn" title="Dismiss" onClick={() => setAuthUrl('')}>
+            <IconX size={13} />
+          </button>
+        </div>
+      )}
       {showActiveRing && (
         <button
           className="pane-close"

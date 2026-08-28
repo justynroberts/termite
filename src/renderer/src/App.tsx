@@ -13,7 +13,7 @@ import AIDrawer from './components/AIDrawer'
 import AboutModal from './components/AboutModal'
 import {
   IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconSparkle,
-  IconSplitDown, IconSplitRight, IconX
+  IconBroadcast, IconDuplicate, IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
 
@@ -29,7 +29,7 @@ export default function App(): JSX.Element {
   const {
     view, setView, tabs, activeTabId, setActiveTabId, closeTab, aiOpen, setAiOpen,
     transfers, toasts, toast, settings, activeTab,
-    splitPane, closePane, activePaneId
+    splitPane, closePane, duplicateTerminal, broadcastTabs, toggleBroadcast, activePaneId
   } = useApp()
 
   const [materialSupported, setMaterialSupported] = useState(false)
@@ -89,6 +89,9 @@ export default function App(): JSX.Element {
           e.preventDefault()
           const paneId = activePaneId[activeTab.id]
           if (paneId) closePane(activeTab.id, paneId)
+        } else if (k === 'd') {
+          e.preventDefault()
+          duplicateTerminal(activeTab.id)
         }
       }
       if (mod && e.key === 'Tab') {
@@ -212,6 +215,22 @@ export default function App(): JSX.Element {
                   <div className="tab-strip-actions">
                     <button
                       className="icon-btn"
+                      title="Duplicate session (Ctrl+Shift+D)"
+                      onClick={() => duplicateTerminal(activeTab.id)}
+                    >
+                      <IconDuplicate size={15} />
+                    </button>
+                    {activeIsSplit && (
+                      <button
+                        className={`icon-btn ${broadcastTabs.has(activeTab.id) ? 'broadcast-active' : ''}`}
+                        title="Synchronized input — type in every pane"
+                        onClick={() => toggleBroadcast(activeTab.id)}
+                      >
+                        <IconBroadcast size={15} />
+                      </button>
+                    )}
+                    <button
+                      className="icon-btn"
                       title="Split right (Ctrl+Shift+E)"
                       onClick={() => splitPane(activeTab.id, 'right')}
                     >
@@ -252,6 +271,7 @@ export default function App(): JSX.Element {
                     <div><span>Split right</span><kbd>Ctrl Shift E</kbd></div>
                     <div><span>Split down</span><kbd>Ctrl Shift O</kbd></div>
                     <div><span>Close pane</span><kbd>Ctrl Shift W</kbd></div>
+                    <div><span>Duplicate session</span><kbd>Ctrl Shift D</kbd></div>
                     <div><span>Close tab</span><kbd>Ctrl W</kbd></div>
                     <div><span>Next tab</span><kbd>Ctrl Tab</kbd></div>
                   </div>

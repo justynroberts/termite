@@ -251,3 +251,43 @@ export const IconCopy = ({ size }: IconProps): JSX.Element =>
     </>,
     size
   )
+
+export const IconPaste = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <path d="M9 5h6" />
+      <path d="M9 3h6a2 2 0 0 1 2 2v1h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2V5a2 2 0 0 1 2-2Z" />
+      <path d="M8 12h8M8 16h6" />
+    </>,
+    size
+  )
+
+export const IconExternalLink = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <path d="M14 3h7v7" />
+      <path d="M10 14 21 3" />
+      <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+    </>,
+    size
+  )
+
+export const IconDuplicate = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <rect x="8" y="8" width="13" height="13" rx="2" />
+      <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+      <path d="M14.5 12v5M12 14.5h5" />
+    </>,
+    size
+  )
+
+export const IconBroadcast = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13" />
+    </>,
+    size
+  )

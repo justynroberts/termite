@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.0 - 2026-08-28
+
+### Added / Improved
+- **Authentication handoff assistant**: when a terminal prints an OAuth or device-login URL
+  (including a hard-wrapped, repainting Claude CLI link), Termite presents a Win11-style action
+  card with **Open browser** and **Paste & submit**. Signing in no longer depends on selecting a
+  giant URL or manually returning a token to the terminal.
+- **Visible terminal clipboard controls**: active panes expose Copy and Paste actions on hover,
+  alongside the keyboard and right-click flows. Copy reports how many characters were captured.
+- **Safe multiline paste**: pasting more than two lines requires confirmation because a remote
+  shell may execute the content immediately.
+- **Duplicate session**: clone the active SSH tab from the tab-strip action or
+  `Ctrl/Cmd+Shift+D`; the duplicate gets an independent connection to the same host.
+- **Synchronized input**: broadcast typing to every connected pane in the active split tab. The
+  control turns red while armed and is deliberately unavailable until the tab is split.
+- All in-app copy actions now use Termite's main-process clipboard bridge rather than the browser
+  clipboard API.
+
 ## 0.6.4 — 2026-07-25
 
 ### Fixed / Added

@@ -31,7 +31,12 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
   terminals edge to edge. Exit with the same shortcut or the faint ✕ pill top-right
 - Clipboard done right: `Ctrl+C` copies when text is selected (SIGINT otherwise),
   `Ctrl+V`/`Ctrl+Shift+V` paste, `Ctrl+Shift+C` copies, right-click copies selection or
-  pastes, optional copy-on-select (PuTTY style)
+  pastes, optional copy-on-select (PuTTY style), and visible Copy/Paste pane actions
+- **Authentication handoff assistant** detects OAuth/device-login links (including wrapped Claude
+  CLI links), opens the complete URL in your browser, then pastes and submits the returned code
+- **Duplicate session** opens an independent connection to the same host; synchronized input can
+  broadcast typing across every pane in a split tab (with a conspicuous red armed state)
+- Multi-line paste confirmation protects remote shells from accidental bulk execution
 - Per-app font, cursor, and scrollback settings applied live
 
 **Keyboard shortcuts**
@@ -43,6 +48,7 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 | Split pane right | `Ctrl/Cmd + Shift + E` |
 | Split pane down | `Ctrl/Cmd + Shift + O` |
 | Close pane | `Ctrl/Cmd + Shift + W` |
+| Duplicate session | `Ctrl/Cmd + Shift + D` |
 | Close tab | `Ctrl/Cmd + W` |
 | Next / previous tab | `Ctrl + Tab` / `Ctrl + Shift + Tab` |
 

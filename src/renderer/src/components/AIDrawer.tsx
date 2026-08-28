@@ -108,7 +108,7 @@ export default function AIDrawer(): JSX.Element {
                 <button
                   className="btn sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(m.command!)
+                    window.termite.clipboard.writeText(m.command!)
                     toast('Copied')
                   }}
                 >

@@ -97,6 +97,10 @@ interface AppState {
   refreshForwards(): Promise<void>
   saveSettings(s: AppSettings): Promise<void>
   openTerminal(host: Host): void
+  duplicateTerminal(tabId: string): void
+  broadcastTabs: Set<string>
+  toggleBroadcast(tabId: string): void
+  broadcastTerminalInput(tabId: string, sourcePaneId: string, data: string): void
   openSftp(host: Host): void
   closeTab(id: string): void
   updateTab(id: string, patch: Partial<Tab>): void
@@ -143,6 +147,9 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const [aiOpen, setAiOpen] = useState(false)
   const [transfers, setTransfers] = useState<TransferProgress[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [broadcastTabs, setBroadcastTabs] = useState<Set<string>>(new Set())
+  const broadcastTabsRef = useRef<Set<string>>(new Set())
+  broadcastTabsRef.current = broadcastTabs
   const tabsRef = useRef<Tab[]>([])
   tabsRef.current = tabs
   const activeTabIdRef = useRef<string | null>(null)
@@ -305,6 +312,61 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     setActiveTabId(id)
   }, [])
 
+  const duplicateTerminal = useCallback((tabId: string) => {
+    const source = tabsRef.current.find((t) => t.id === tabId)
+    if (!source || source.kind !== 'terminal') return
+    const host = hosts.find((h) => h.id === source.hostId)
+    if (!host) {
+      toast('The host for this session no longer exists', 'error')
+      return
+    }
+    const id = `tab-${++tabSeq}`
+    const pane = newPane()
+    setTabs((current) => [
+      ...current,
+      {
+        id,
+        kind: 'terminal',
+        hostId: host.id,
+        title: `${source.title} copy`,
+        status: 'connecting',
+        columns: [[pane]]
+      }
+    ])
+    setActivePaneId((current) => ({ ...current, [id]: pane.paneId }))
+    setActiveTabId(id)
+    toast(`Duplicated ${source.title}`)
+  }, [hosts, toast])
+
+  const toggleBroadcast = useCallback((tabId: string) => {
+    setBroadcastTabs((current) => {
+      const next = new Set(current)
+      if (next.has(tabId)) {
+        next.delete(tabId)
+        toast('Synchronized input off')
+      } else {
+        const tab = tabsRef.current.find((candidate) => candidate.id === tabId)
+        if (!tab || (tab.columns?.flat().length ?? 0) < 2) {
+          toast('Split the terminal before enabling synchronized input', 'warn')
+          return current
+        }
+        next.add(tabId)
+        toast('Synchronized input on — typing goes to every pane', 'warn')
+      }
+      return next
+    })
+  }, [toast])
+
+  const broadcastTerminalInput = useCallback((tabId: string, sourcePaneId: string, data: string) => {
+    if (!broadcastTabsRef.current.has(tabId)) return
+    const tab = tabsRef.current.find((candidate) => candidate.id === tabId)
+    for (const pane of tab?.columns?.flat() ?? []) {
+      if (pane.paneId !== sourcePaneId && pane.sessionId && pane.status === 'connected') {
+        window.termite.ssh.write(pane.sessionId, data)
+      }
+    }
+  }, [])
+
   const runRunbook = useCallback(async (rb: Runbook) => {
     const runId = await window.termite.runbooks.run(rb.id)
     const runState: RunState = {
@@ -357,6 +419,12 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
         if (current !== id) return current
         return next.length ? next[next.length - 1].id : null
       })
+      return next
+    })
+    setBroadcastTabs((current) => {
+      if (!current.has(id)) return current
+      const next = new Set(current)
+      next.delete(id)
       return next
     })
   }, [])
@@ -434,12 +502,20 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
       if (pane?.sessionId) window.termite.ssh.disconnect(pane.sessionId)
       const columns = tab.columns.map((col) => col.filter((p) => p.paneId !== paneId)).filter((col) => col.length > 0)
       updateTab(tabId, { columns })
+      if (columns.flat().length < 2 && broadcastTabsRef.current.has(tabId)) {
+        setBroadcastTabs((current) => {
+          const next = new Set(current)
+          next.delete(tabId)
+          return next
+        })
+        toast('Synchronized input off')
+      }
       if (activePaneIdRef.current[tabId] === paneId) {
         const first = columns[0]?.[0]
         if (first) setActivePane(tabId, first.paneId)
       }
     },
-    [closeTab, updateTab, setActivePane]
+    [closeTab, updateTab, setActivePane, toast]
   )
 
   closePaneRef.current = closePane
@@ -469,7 +545,8 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     transfers, toasts, toast,
     refreshHosts, refreshKeys, refreshSnippets, refreshForwards,
     saveSettings,
-    openTerminal, openSftp, closeTab, updateTab,
+    openTerminal, duplicateTerminal, broadcastTabs, toggleBroadcast, broadcastTerminalInput,
+    openSftp, closeTab, updateTab,
     updatePane, splitPane, closePane, activePaneId, setActivePane,
     activeSessionId,
     sendToActiveTerminal,

@@ -768,6 +768,72 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 .toast.error { border-left-color: var(--danger); }
 .toast.warn { border-left-color: var(--warn); }
 
+/* ---------- terminal workflow affordances ---------- */
+.terminal-actions {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  z-index: 8;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  box-shadow: 0 7px 24px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px) saturate(1.2);
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.term-pane:hover .terminal-actions,
+.terminal-actions:focus-within { opacity: 1; transform: none; }
+.terminal-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 27px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-1);
+  background: transparent;
+  font: 600 12px var(--font-ui);
+  cursor: pointer;
+}
+.terminal-action:hover:not(:disabled) { color: var(--text-0); background: var(--bg-3); }
+.terminal-action:disabled { opacity: 0.38; cursor: default; }
+.icon-btn.broadcast-active {
+  color: #fff;
+  background: var(--danger);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 60%, transparent), 0 0 18px color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.auth-handoff {
+  position: absolute;
+  z-index: 9;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 36px));
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px 11px 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-2) 91%, transparent);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.025) inset;
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+.auth-handoff-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.auth-handoff-copy strong { color: var(--text-0); font-size: 14px; }
+.auth-handoff-copy span { color: var(--text-1); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auth-handoff .btn { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+
+:root[data-theme='light'] .terminal-actions,
+:root[data-theme='light'] .auth-handoff { box-shadow: 0 12px 36px rgba(35, 50, 75, 0.18); }
+
 .checkbox-row { display: flex; align-items: center; gap: 8px; }
 .checkbox-row input { width: auto; }
 
