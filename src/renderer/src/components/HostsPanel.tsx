@@ -238,6 +238,24 @@ function HostEditor({
                   </option>
                 ))}
             </select>
+            <label>Environment</label>
+            <textarea
+              className="mono"
+              rows={3}
+              value={form.environment ?? ''}
+              placeholder={'TERM=xterm-256color\nAPP_ENV=production'}
+              onChange={(e) => set('environment', e.target.value || undefined)}
+            />
+            <label>Startup command</label>
+            <textarea
+              className="mono"
+              rows={3}
+              value={form.startupCommand ?? ''}
+              placeholder="cd /srv/app && git status"
+              onChange={(e) => set('startupCommand', e.target.value || undefined)}
+            />
+            <div />
+            <div className="hint">Runs automatically after connecting. Do not put secrets in environment values.</div>
             <label>Color</label>
             <div style={{ display: 'flex', gap: 6 }}>
               {COLORS.map((c) => (

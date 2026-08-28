@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 - 2026-08-28
+
+### Added
+- **Workspace restoration** remembers open SSH tabs and split-pane topology. Relaunching Termite
+  recreates the layout with fresh connections; session IDs and terminal contents are never saved.
+- **Per-host startup automation**: optional `KEY=value` environment lines and a multiline startup
+  command are applied immediately after login. Linux/macOS and Windows PowerShell syntax are
+  generated from the host OS setting.
+- **Find in terminal** via the hover toolbar or `Ctrl/Cmd+F` using xterm's scrollback search.
+
+### Safety
+- Startup environment values are documented as non-secret configuration; credentials remain in
+  Termite's encrypted keychain-backed fields.
+
 ## 0.7.0 - 2026-08-28
 
 ### Added / Improved

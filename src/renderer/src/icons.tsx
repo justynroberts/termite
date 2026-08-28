@@ -291,3 +291,12 @@ export const IconBroadcast = ({ size }: IconProps): JSX.Element =>
     </>,
     size
   )
+
+export const IconSearch = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="22" y2="22" />
+    </>,
+    size
+  )

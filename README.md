@@ -37,6 +37,9 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 - **Duplicate session** opens an independent connection to the same host; synchronized input can
   broadcast typing across every pane in a split tab (with a conspicuous red armed state)
 - Multi-line paste confirmation protects remote shells from accidental bulk execution
+- Open SSH tabs and split layouts are restored after restart with fresh connections
+- Per-host environment variables and startup commands automate login setup
+- Search terminal scrollback with `Ctrl/Cmd+F` or the pane toolbar
 - Per-app font, cursor, and scrollback settings applied live
 
 **Keyboard shortcuts**
@@ -49,6 +52,7 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 | Split pane down | `Ctrl/Cmd + Shift + O` |
 | Close pane | `Ctrl/Cmd + Shift + W` |
 | Duplicate session | `Ctrl/Cmd + Shift + D` |
+| Find in terminal | `Ctrl/Cmd + F` |
 | Close tab | `Ctrl/Cmd + W` |
 | Next / previous tab | `Ctrl + Tab` / `Ctrl + Shift + Tab` |
 

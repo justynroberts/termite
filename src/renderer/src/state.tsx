@@ -126,6 +126,13 @@ let paneSeq = 0
 const MAX_PANES = 8
 const MAX_COLS = 4
 const MAX_ROWS = 4
+const WORKSPACE_KEY = 'termite.workspace.v1'
+
+interface SavedWorkspaceTab {
+  hostId: string
+  title: string
+  columns: number[]
+}
 
 function newPane(): TermPane {
   return { paneId: `pane-${++paneSeq}`, status: 'connecting' }
@@ -151,6 +158,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const broadcastTabsRef = useRef<Set<string>>(new Set())
   broadcastTabsRef.current = broadcastTabs
   const tabsRef = useRef<Tab[]>([])
+  const workspaceRestoredRef = useRef(false)
   tabsRef.current = tabs
   const activeTabIdRef = useRef<string | null>(null)
   activeTabIdRef.current = activeTabId
@@ -181,6 +189,44 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     refreshRunbooks()
     window.termite.settings.get().then(setSettings)
   }, [refreshHosts, refreshKeys, refreshSnippets, refreshForwards, refreshRunbooks])
+
+  // Restore terminal topology only (never session IDs or terminal contents).
+  // Each restored pane establishes a fresh SSH connection using the saved host.
+  useEffect(() => {
+    if (workspaceRestoredRef.current || hosts.length === 0) return
+    workspaceRestoredRef.current = true
+    try {
+      const saved = JSON.parse(localStorage.getItem(WORKSPACE_KEY) ?? '[]') as SavedWorkspaceTab[]
+      const restored: Tab[] = []
+      const active: Record<string, string> = {}
+      for (const item of saved.slice(0, 12)) {
+        const host = hosts.find((candidate) => candidate.id === item.hostId)
+        if (!host) continue
+        const id = `tab-${++tabSeq}`
+        const columns = (item.columns.length ? item.columns : [1]).slice(0, MAX_COLS).map((count) =>
+          Array.from({ length: Math.max(1, Math.min(MAX_ROWS, count)) }, () => newPane())
+        )
+        restored.push({ id, kind: 'terminal', hostId: host.id, title: item.title || host.label, status: 'connecting', columns })
+        active[id] = columns[0][0].paneId
+      }
+      if (restored.length) {
+        setTabs(restored)
+        setActivePaneId(active)
+        setActiveTabId(restored[0].id)
+        toast(`Restored ${restored.length} terminal workspace${restored.length === 1 ? '' : 's'}`)
+      }
+    } catch {
+      localStorage.removeItem(WORKSPACE_KEY)
+    }
+  }, [hosts, toast])
+
+  useEffect(() => {
+    if (!workspaceRestoredRef.current) return
+    const saved: SavedWorkspaceTab[] = tabs
+      .filter((tab) => tab.kind === 'terminal' && tab.columns)
+      .map((tab) => ({ hostId: tab.hostId, title: tab.title, columns: tab.columns!.map((column) => column.length) }))
+    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(saved))
+  }, [tabs])
 
   // runbook execution events → run state + tab status
   useEffect(() => {

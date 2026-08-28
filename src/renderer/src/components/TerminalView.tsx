@@ -6,7 +6,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
-import { IconCopy, IconExternalLink, IconPaste, IconX } from '../icons'
+import { IconCopy, IconExternalLink, IconPaste, IconSearch, IconX } from '../icons'
 
 /** #rrggbb → rgba(...) with alpha, for glass mode */
 function withAlpha(hex: string | undefined, alpha: number): string {
@@ -28,6 +28,23 @@ function themedBackground(themeId: string): { theme: ReturnType<typeof getTermin
   return { theme: { ...base, background: bg }, bg }
 }
 
+function startupInput(host: ReturnType<typeof useApp>['hosts'][number] | undefined): string {
+  if (!host) return ''
+  const pairs = (host.environment ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#') && line.includes('='))
+  const windows = host.os === 'windows'
+  const env = pairs.map((line) => {
+    const at = line.indexOf('=')
+    const key = line.slice(0, at).trim().replace(/[^A-Za-z0-9_]/g, '')
+    const value = line.slice(at + 1)
+    return windows ? `$env:${key}='${value.replace(/'/g, "''")}'` : `export ${key}='${value.replace(/'/g, "'\\''")}'`
+  })
+  const commands = [...env, host.startupCommand?.trim() ?? ''].filter(Boolean)
+  return commands.length ? `${commands.join(windows ? '; ' : '\n')}\r` : ''
+}
+
 interface Props {
   tab: Tab
   pane: TermPane
@@ -44,9 +61,10 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const startedRef = useRef(false)
   const copyRef = useRef<() => void>(() => undefined)
   const pasteRef = useRef<(submit?: boolean) => void>(() => undefined)
+  const searchRef = useRef<() => void>(() => undefined)
   const [selectionLength, setSelectionLength] = useState(0)
   const [authUrl, setAuthUrl] = useState('')
-  const { settings, updatePane, setActivePane, closePane, broadcastTerminalInput, toast } = useApp()
+  const { settings, hosts, updatePane, setActivePane, closePane, broadcastTerminalInput, toast } = useApp()
   const settingsRef = useRef(settings)
   settingsRef.current = settings
 
@@ -121,7 +139,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
         }
       }
     })
-    term.loadAddon(new SearchAddon())
+    const search = new SearchAddon()
+    term.loadAddon(search)
     term.open(containerRef.current)
     try {
       const webgl = new WebglAddon()
@@ -189,6 +208,14 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     }
     copyRef.current = copySelection
     pasteRef.current = pasteClipboard
+    searchRef.current = () => {
+      const query = prompt('Find in terminal')
+      if (query) {
+        const found = search.findNext(query, { caseSensitive: false, incremental: false })
+        if (!found) toast(`No terminal matches for “${query}”`, 'warn')
+      }
+      term.focus()
+    }
     term.attachCustomKeyEventHandler((ev) => {
       if (ev.type !== 'keydown') return true
       const mod = ev.ctrlKey || ev.metaKey
@@ -201,6 +228,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       if (ev.code === 'KeyV') {
         ev.preventDefault() // stop the native paste so it doesn't double up
         pasteClipboard()
+        return false
+      }
+      if (ev.code === 'KeyF') {
+        ev.preventDefault()
+        searchRef.current()
         return false
       }
       return true
@@ -257,6 +289,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           broadcastTerminalInput(tab.id, pane.paneId, data)
         })
         term.onResize(({ cols, rows }) => window.termite.ssh.resize(sessionId, cols, rows))
+        const startup = startupInput(hosts.find((host) => host.id === tab.hostId))
+        if (startup) {
+          window.termite.ssh.write(sessionId, startup)
+          toast(`Startup command sent to ${tab.title}`)
+        }
         term.focus()
       })
       .catch((err) => {
@@ -298,6 +335,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       termRef.current = null
       copyRef.current = () => undefined
       pasteRef.current = () => undefined
+      searchRef.current = () => undefined
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -354,6 +392,9 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           </button>
           <button className="terminal-action" title="Paste from clipboard" onClick={() => pasteRef.current()}>
             <IconPaste size={13} /> Paste
+          </button>
+          <button className="terminal-action" title="Find in terminal (Ctrl+F)" onClick={() => searchRef.current()}>
+            <IconSearch size={13} /> Find
           </button>
         </div>
       )}

@@ -16,6 +16,10 @@ export interface Host {
   jumpHostId?: string
   os?: 'linux' | 'macos' | 'windows' | 'unknown'
   notes?: string
+  /** Non-secret KEY=value lines applied after shell connection. */
+  environment?: string
+  /** Command or script sent after the environment is applied. */
+  startupCommand?: string
   lastConnected?: number
   createdAt: number
 }
