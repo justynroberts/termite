@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
-import type { AppSettings } from '../../../shared/types'
+import type { AppSettings, KnownHost } from '../../../shared/types'
 import { useApp } from '../state'
 import { TERMINAL_FONTS, TERMINAL_THEMES } from '../themes'
 
@@ -8,11 +8,16 @@ export default function SettingsPanel(): JSX.Element {
   const [form, setForm] = useState<AppSettings>(settings)
   const [dirty, setDirty] = useState(false)
   const appliedSettings = useRef(settings)
+  const [knownHosts, setKnownHosts] = useState<KnownHost[]>([])
 
   useEffect(() => {
     appliedSettings.current = settings
     if (!dirty) setForm(settings)
   }, [settings, dirty])
+
+  useEffect(() => {
+    void window.termite.ssh.listKnownHosts().then(setKnownHosts)
+  }, [])
 
   const set = <K extends keyof AppSettings>(k: K, v: AppSettings[K]): void => {
     setForm((f) => ({ ...f, [k]: v }))
@@ -33,6 +38,13 @@ export default function SettingsPanel(): JSX.Element {
     await saveSettings(form)
     setDirty(false)
     toast('Settings saved')
+  }
+
+  const forgetKnownHost = async (entry: KnownHost): Promise<void> => {
+    if (!confirm(`Forget the saved host key for ${entry.host}?\n\nOnly continue if you have independently verified the replacement fingerprint.`)) return
+    await window.termite.ssh.removeKnownHost(entry.host)
+    setKnownHosts((current) => current.filter((known) => known.host !== entry.host))
+    toast(`${entry.host} forgotten — reconnect to verify and trust its new key`, 'warn')
   }
 
   return (
@@ -184,6 +196,31 @@ export default function SettingsPanel(): JSX.Element {
             <span className="hint">Ask before closing a tab with an active connection</span>
           </div>
         </div>
+      </div>
+
+      <div className="settings-section">
+        <h3>Known hosts</h3>
+        <div className="hint" style={{ marginBottom: 10 }}>
+          Termite pins each server key on first connection. Forget a key only after independently
+          confirming that the server was rebuilt or its SSH host key was intentionally rotated.
+        </div>
+        {knownHosts.length === 0 ? (
+          <div className="hint">No saved host keys.</div>
+        ) : (
+          <div className="known-host-list">
+            {knownHosts.map((entry) => (
+              <div className="known-host-row" key={entry.host}>
+                <div className="known-host-details">
+                  <strong>{entry.host}</strong>
+                  <span className="mono select-text">{entry.fingerprint}</span>
+                </div>
+                <button className="btn danger" onClick={() => void forgetKnownHost(entry)}>
+                  Forget
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button className="btn primary" onClick={save} disabled={!dirty}>

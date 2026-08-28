@@ -270,6 +270,10 @@ export class Store {
   }
 
   // ---- known hosts ----
+  listKnownHosts(): KnownHost[] {
+    return [...this.data.knownHosts].sort((a, b) => a.host.localeCompare(b.host))
+  }
+
   getKnownHost(host: string): KnownHost | undefined {
     return this.data.knownHosts.find((k) => k.host === host)
   }

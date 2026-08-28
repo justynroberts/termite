@@ -742,6 +742,21 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 .theme-card .theme-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .theme-card .theme-name { font-size: 11px; font-weight: 600; opacity: 0.85; }
 
+.known-host-list { display: grid; gap: 8px; }
+.known-host-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-1);
+}
+.known-host-details { display: grid; gap: 4px; min-width: 0; }
+.known-host-details strong { color: var(--text-0); font-size: 13px; }
+.known-host-details span { color: var(--text-1); font-size: 11px; overflow-wrap: anywhere; }
+
 .font-preview {
   background: var(--bg-0);
   border: 1px solid var(--border);

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AIRequest, AIResponse, AppSettings, FileEntry, Host, PortForward,
-  Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
+  KnownHost, Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
 } from '../shared/types'
 
 export interface TermiteAPI {
@@ -33,6 +33,8 @@ export interface TermiteAPI {
     resize(sessionId: string, cols: number, rows: number): void
     disconnect(sessionId: string): Promise<void>
     trustHostKey(host: string, fingerprint: string): Promise<void>
+    listKnownHosts(): Promise<KnownHost[]>
+    removeKnownHost(host: string): Promise<void>
     onData(sessionId: string, cb: (data: string) => void): () => void
     onStatus(cb: (info: SessionInfo) => void): () => void
     onHostKeyMismatch(cb: (info: { host: string; fingerprint: string; known?: string }) => void): () => void
@@ -126,6 +128,8 @@ const api: TermiteAPI = {
     resize: (sessionId, cols, rows) => ipcRenderer.send('ssh:resize', sessionId, cols, rows),
     disconnect: (sessionId) => ipcRenderer.invoke('ssh:disconnect', sessionId),
     trustHostKey: (host, fingerprint) => ipcRenderer.invoke('ssh:trust-hostkey', host, fingerprint),
+    listKnownHosts: () => ipcRenderer.invoke('ssh:list-known-hosts'),
+    removeKnownHost: (host) => ipcRenderer.invoke('ssh:remove-known-host', host),
     onData: (sessionId, cb) => sub(`ssh:data:${sessionId}`, cb as (...args: unknown[]) => void),
     onStatus: (cb) => sub('ssh:status', cb as (...args: unknown[]) => void),
     onHostKeyMismatch: (cb) => sub('ssh:hostkey-mismatch', cb as (...args: unknown[]) => void)

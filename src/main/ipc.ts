@@ -101,6 +101,8 @@ export function registerIpc(store: Store, ssh: SSHManager, getWindow: () => Brow
   ipcMain.handle('ssh:trust-hostkey', (_e, host: string, fingerprint: string) => {
     store.saveKnownHost({ host, fingerprint, addedAt: Date.now() })
   })
+  ipcMain.handle('ssh:list-known-hosts', () => store.listKnownHosts())
+  ipcMain.handle('ssh:remove-known-host', (_e, host: string) => store.removeKnownHost(host))
 
   // ---- sftp ----
   ipcMain.handle('sftp:open', (_e, hostId: string) => ssh.openSftp(hostId))
