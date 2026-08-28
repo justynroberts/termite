@@ -80,7 +80,7 @@ export default function SettingsPanel(): JSX.Element {
                     )
                   )}
                 </span>
-                <span className="theme-name" style={{ color: t.theme.foreground }}>
+                <span className="theme-name" style={{ color: t.light ? '#334155' : '#f1f5f9' }}>
                   {t.name}
                 </span>
               </button>

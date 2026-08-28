@@ -122,7 +122,7 @@ export const TERMINAL_THEMES: TerminalTheme[] = [
     name: 'Solarized Light',
     light: true,
     theme: {
-      background: '#fdf6e3', foreground: '#657b83', cursor: '#657b83', cursorAccent: '#fdf6e3',
+      background: '#fdf6e3', foreground: '#586e75', cursor: '#586e75', cursorAccent: '#fdf6e3',
       selectionBackground: '#eee8d5',
       black: '#073642', red: '#dc322f', green: '#859900', yellow: '#b58900',
       blue: '#268bd2', magenta: '#d33682', cyan: '#2aa198', white: '#eee8d5',
