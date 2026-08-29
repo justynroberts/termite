@@ -373,8 +373,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     <div
       className={`terminal-container term-pane ${active && showActiveRing ? 'active' : ''}`}
       style={{ ['--term-bg' as string]: termBg }}
-      ref={containerRef}
     >
+      <div className="terminal-mount" ref={containerRef} />
       {active && (
         <div className="terminal-actions" onMouseDown={(e) => e.preventDefault()}>
           <button
