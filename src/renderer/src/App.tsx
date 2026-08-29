@@ -153,13 +153,6 @@ export default function App(): JSX.Element {
         ))}
         <div className="activity-spacer" />
         <button
-          className={`activity-btn ${aiOpen ? 'active' : ''}`}
-          title="AI Copilot (Ctrl+K)"
-          onClick={() => setAiOpen((v) => !v)}
-        >
-          <IconTermite />
-        </button>
-        <button
           className={`activity-btn ${view === 'settings' ? 'active' : ''}`}
           title="Settings"
           onClick={() => setView('settings')}
@@ -331,6 +324,17 @@ export default function App(): JSX.Element {
       </div>
 
       {aiOpen && settings.aiEnabled && <AIDrawer />}
+      {settings.aiEnabled && (
+        <button
+          className={`ai-edge-tab ${aiOpen ? 'open' : ''}`}
+          title="Termite AI (Ctrl+K)"
+          aria-label="Toggle Termite AI"
+          onClick={() => setAiOpen((value) => !value)}
+        >
+          <IconTermite size={17} />
+          <span>AI</span>
+        </button>
+      )}
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
 
       <div className="toast-stack">
