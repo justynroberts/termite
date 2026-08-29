@@ -284,6 +284,9 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
             if (candidate) setAuthUrl(candidate.replace(/[),.;]+$/, ''))
           })
         })
+        void window.termite.ssh.subscribe(sessionId).then((initialOutput) => {
+          if (initialOutput) term.write(initialOutput)
+        })
         term.onData((data) => {
           window.termite.ssh.write(sessionId, data)
           broadcastTerminalInput(tab.id, pane.paneId, data)

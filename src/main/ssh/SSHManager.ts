@@ -14,6 +14,8 @@ export interface ShellSession {
   channel: ClientChannel
   /** ring buffer of recent output for AI context */
   recentOutput: string[]
+  /** Output received before the renderer subscribes to this new session. */
+  pendingOutput: string[]
 }
 
 export interface SftpSession {
@@ -42,6 +44,7 @@ export interface HostKeyPrompt {
  */
 export class SSHManager extends EventEmitter {
   private shells = new Map<string, ShellSession>()
+  private closedOutput = new Map<string, string>()
   private sftps = new Map<string, SftpSession>()
   private forwards = new Map<string, ActiveForward>()
 
@@ -175,13 +178,14 @@ export class SSHManager extends EventEmitter {
         )
       })
 
-      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [] }
+      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [], pendingOutput: [] }
       this.shells.set(sessionId, session)
       this.store.touchHost(hostId)
       this.activity?.start(sessionId, hostId, host.label)
 
       channel.on('data', (data: Buffer) => {
         const text = data.toString('utf8')
+        session.pendingOutput.push(text)
         this.activity?.append(sessionId, text)
         session.recentOutput.push(text)
         // keep roughly the last 64KB for AI context
@@ -190,8 +194,15 @@ export class SSHManager extends EventEmitter {
         }
         this.emit('session:data', sessionId, data)
       })
-      channel.stderr?.on('data', (data: Buffer) => this.emit('session:data', sessionId, data))
+      channel.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString('utf8')
+        session.pendingOutput.push(text)
+        this.activity?.append(sessionId, text)
+        this.emit('session:data', sessionId, data)
+      })
       channel.on('close', () => {
+        this.closedOutput.set(sessionId, session.pendingOutput.join(''))
+        setTimeout(() => this.closedOutput.delete(sessionId), 60000)
         this.activity?.end(sessionId)
         this.emit('session:status', { sessionId, hostId, hostLabel: host.label, status: 'disconnected' })
         this.shells.delete(sessionId)
@@ -234,6 +245,14 @@ export class SSHManager extends EventEmitter {
     const s = this.shells.get(sessionId)
     if (!s) return ''
     return s.recentOutput.join('')
+  }
+
+  subscribe(sessionId: string): string {
+    const session = this.shells.get(sessionId)
+    if (session) return session.pendingOutput.splice(0).join('')
+    const closed = this.closedOutput.get(sessionId) ?? ''
+    this.closedOutput.delete(sessionId)
+    return closed
   }
 
   /** Run a one-off command on an existing session's host (new exec channel). */

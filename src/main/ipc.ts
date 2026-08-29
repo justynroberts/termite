@@ -102,6 +102,7 @@ export function registerIpc(store: Store, ssh: SSHManager, activity: ActivitySto
   ipcMain.on('ssh:write', (_e, sessionId: string, data: string) => ssh.write(sessionId, data))
   ipcMain.on('ssh:resize', (_e, sessionId: string, cols: number, rows: number) => ssh.resize(sessionId, cols, rows))
   ipcMain.handle('ssh:disconnect', (_e, sessionId: string) => ssh.closeShell(sessionId))
+  ipcMain.handle('ssh:subscribe', (_e, sessionId: string) => ssh.subscribe(sessionId))
   ipcMain.handle('ssh:trust-hostkey', (_e, host: string, fingerprint: string) => {
     store.saveKnownHost({ host, fingerprint, addedAt: Date.now() })
   })

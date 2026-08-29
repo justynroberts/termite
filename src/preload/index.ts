@@ -37,6 +37,7 @@ export interface TermiteAPI {
     write(sessionId: string, data: string): void
     resize(sessionId: string, cols: number, rows: number): void
     disconnect(sessionId: string): Promise<void>
+    subscribe(sessionId: string): Promise<string>
     trustHostKey(host: string, fingerprint: string): Promise<void>
     listKnownHosts(): Promise<KnownHost[]>
     removeKnownHost(host: string): Promise<void>
@@ -138,6 +139,7 @@ const api: TermiteAPI = {
     write: (sessionId, data) => ipcRenderer.send('ssh:write', sessionId, data),
     resize: (sessionId, cols, rows) => ipcRenderer.send('ssh:resize', sessionId, cols, rows),
     disconnect: (sessionId) => ipcRenderer.invoke('ssh:disconnect', sessionId),
+    subscribe: (sessionId) => ipcRenderer.invoke('ssh:subscribe', sessionId),
     trustHostKey: (host, fingerprint) => ipcRenderer.invoke('ssh:trust-hostkey', host, fingerprint),
     listKnownHosts: () => ipcRenderer.invoke('ssh:list-known-hosts'),
     removeKnownHost: (host) => ipcRenderer.invoke('ssh:remove-known-host', host),
