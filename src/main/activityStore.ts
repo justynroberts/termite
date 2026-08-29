@@ -1,19 +1,24 @@
 import { app } from 'electron'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
+import { hostname, userInfo } from 'os'
 import { v4 as uuid } from 'uuid'
 import type { AuditEvent, SessionLogSummary } from '../shared/types'
 
 export class ActivityStore {
+  private static readonly RETENTION_MS = 30 * 24 * 60 * 60 * 1000
   private readonly root = join(app.getPath('userData'), 'activity')
   private readonly logDir = join(this.root, 'sessions')
   private readonly indexPath = join(this.root, 'sessions.json')
   private readonly auditPath = join(this.root, 'audit.jsonl')
   private sessions: SessionLogSummary[]
+  private readonly actor = `${userInfo().username}@${hostname()}`
+  private lastAuditPrune = 0
 
   constructor() {
     mkdirSync(this.logDir, { recursive: true })
     try { this.sessions = JSON.parse(readFileSync(this.indexPath, 'utf8')) } catch { this.sessions = [] }
+    this.pruneAudit()
   }
 
   start(id: string, hostId: string, hostLabel: string): void {
@@ -47,10 +52,12 @@ export class ActivityStore {
   }
 
   audit(action: string, target?: string, detail?: string, outcome: AuditEvent['outcome'] = 'info'): void {
-    appendFileSync(this.auditPath, JSON.stringify({ id: uuid(), at: Date.now(), action, target, detail, outcome } satisfies AuditEvent) + '\n')
+    this.pruneAudit()
+    appendFileSync(this.auditPath, JSON.stringify({ id: uuid(), at: Date.now(), actor: this.actor, action, target, detail, outcome } satisfies AuditEvent) + '\n')
   }
 
   listAudit(query = ''): AuditEvent[] {
+    this.pruneAudit()
     if (!existsSync(this.auditPath)) return []
     const needle = query.trim().toLowerCase()
     return readFileSync(this.auditPath, 'utf8').split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as AuditEvent)
@@ -59,5 +66,17 @@ export class ActivityStore {
 
   private persist(): void {
     writeFileSync(this.indexPath, JSON.stringify(this.sessions.slice(0, 2000), null, 2))
+  }
+
+  private pruneAudit(): void {
+    const now = Date.now()
+    if (now - this.lastAuditPrune < 60 * 60 * 1000) return
+    this.lastAuditPrune = now
+    if (!existsSync(this.auditPath)) return
+    const cutoff = now - ActivityStore.RETENTION_MS
+    const retained = readFileSync(this.auditPath, 'utf8').split(/\r?\n/).filter(Boolean).filter((line) => {
+      try { return (JSON.parse(line) as AuditEvent).at >= cutoff } catch { return false }
+    })
+    writeFileSync(this.auditPath, retained.length ? `${retained.join('\n')}\n` : '')
   }
 }

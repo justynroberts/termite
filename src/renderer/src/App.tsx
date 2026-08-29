@@ -12,8 +12,9 @@ import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
 import AboutModal from './components/AboutModal'
 import TermiteLogo from './components/TermiteLogo'
+import AuditPanel from './components/AuditPanel'
 import {
-  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet,
+  IconForward, IconHistory, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet,
   IconBroadcast, IconDuplicate, IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
@@ -23,6 +24,7 @@ const NAV: { view: View; icon: JSX.Element; title: string }[] = [
   { view: 'keys', icon: <IconKey />, title: 'SSH keys' },
   { view: 'snippets', icon: <IconSnippet />, title: 'Snippets' },
   { view: 'runbooks', icon: <IconRunbook />, title: 'Runbooks — orchestrate across hosts' },
+  { view: 'audit', icon: <IconHistory />, title: 'Audit log — last 30 days' },
   { view: 'forwards', icon: <IconForward />, title: 'Port forwarding' }
 ]
 
@@ -162,7 +164,7 @@ export default function App(): JSX.Element {
         </button>
       </div>
 
-      {view !== 'settings' && (
+      {view !== 'settings' && view !== 'audit' && (
         <div className="sidebar">
           {view === 'hosts' && <HostsPanel />}
           {view === 'keys' && <KeysPanel />}
@@ -175,6 +177,8 @@ export default function App(): JSX.Element {
       <div className="main">
         {view === 'settings' ? (
           <SettingsPanel />
+        ) : view === 'audit' ? (
+          <AuditPanel />
         ) : (
           <>
             {tabs.length > 0 && (

@@ -7,7 +7,7 @@ import type {
 } from '../../shared/types'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 
-export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'runbooks' | 'settings'
+export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'runbooks' | 'audit' | 'settings'
 
 // ---- runbook run tracking ----
 export interface RunHostState {

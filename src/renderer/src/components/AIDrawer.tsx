@@ -20,6 +20,10 @@ function asRunnableScript(command: string): string {
   return `TERMITE_SCRIPT_PATH=$(mktemp /tmp/termite-ai.XXXXXX)\ncat > "$TERMITE_SCRIPT_PATH" <<'TERMITE_SCRIPT_EOF'\n${command}\nTERMITE_SCRIPT_EOF\nchmod 700 "$TERMITE_SCRIPT_PATH"\n"$TERMITE_SCRIPT_PATH"\nTERMITE_SCRIPT_STATUS=$?\nrm -f "$TERMITE_SCRIPT_PATH"\nunset TERMITE_SCRIPT_PATH\n(exit $TERMITE_SCRIPT_STATUS)`
 }
 
+function isPotentiallyDestructive(command: string): boolean {
+  return /(?:^|[;&|]\s*)(?:sudo\s+)?(?:rm\b|rmdir\b|shred\b|truncate\b|dd\b|mkfs\b|wipefs\b|fdisk\b|parted\b|shutdown\b|reboot\b|poweroff\b|halt\b|userdel\b|groupdel\b)|\b(?:docker|podman)\s+(?:system|image|container|volume|network)?\s*prune\b|\bkubectl\s+delete\b|\bterraform\s+destroy\b|\bgit\s+(?:reset\s+--hard|clean\s+-[^\n]*f)\b|\bDROP\s+(?:DATABASE|TABLE|SCHEMA)\b|\bDELETE\s+FROM\b/i.test(command)
+}
+
 export default function AIDrawer(): JSX.Element {
   const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId } = useApp()
   const activeTab = tabs.find((tab) => tab.id === activeTabId)
@@ -94,8 +98,12 @@ export default function AIDrawer(): JSX.Element {
       toast('Open a terminal to run commands', 'warn')
       return
     }
-    const isScript = command.includes('\n')
-    if (!confirm(`Run this ${isScript ? 'temporary script' : 'command'} in the active terminal?\n\n${command}`)) return
+    const risky = isPotentiallyDestructive(command)
+    if (risky && !confirm(`Potentially destructive command. Run it anyway?\n\n${command}`)) {
+      void window.termite.activity.record({ action: 'ai.run.cancelled', target: activeTab?.title, detail: command, outcome: 'info' })
+      return
+    }
+    void window.termite.activity.record({ action: command.includes('\n') ? 'ai.script.run' : 'ai.command.run', target: activeTab?.title, detail: command, outcome: risky ? 'info' : 'ok' })
     sendToActiveTerminal(asRunnableScript(command) + '\n')
   }
 
@@ -104,6 +112,7 @@ export default function AIDrawer(): JSX.Element {
       toast('Open a terminal first', 'warn')
       return
     }
+    void window.termite.activity.record({ action: command.includes('\n') ? 'ai.script.insert' : 'ai.command.insert', target: activeTab?.title, detail: command, outcome: 'ok' })
     sendToActiveTerminal(command) // no newline — user reviews & presses Enter
   }
 

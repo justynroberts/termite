@@ -31,6 +31,7 @@ export interface TermiteAPI {
     sessions(query?: string): Promise<SessionLogSummary[]>
     session(id: string): Promise<string>
     audit(query?: string): Promise<AuditEvent[]>
+    record(event: Pick<AuditEvent, 'action' | 'target' | 'detail' | 'outcome'>): Promise<void>
   }
   ssh: {
     connect(hostId: string, cols: number, rows: number): Promise<string>
@@ -132,7 +133,8 @@ const api: TermiteAPI = {
   activity: {
     sessions: (query) => ipcRenderer.invoke('activity:sessions', query),
     session: (id) => ipcRenderer.invoke('activity:session', id),
-    audit: (query) => ipcRenderer.invoke('activity:audit', query)
+    audit: (query) => ipcRenderer.invoke('activity:audit', query),
+    record: (event) => ipcRenderer.invoke('activity:record', event)
   },
   ssh: {
     connect: (hostId, cols, rows) => ipcRenderer.invoke('ssh:connect', hostId, cols, rows),

@@ -137,6 +137,7 @@ export interface SessionLogSummary {
 export interface AuditEvent {
   id: string
   at: number
+  actor?: string
   action: string
   target?: string
   detail?: string
