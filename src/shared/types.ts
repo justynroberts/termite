@@ -125,6 +125,24 @@ export interface KnownHost {
   addedAt: number
 }
 
+export interface SessionLogSummary {
+  id: string
+  hostId: string
+  hostLabel: string
+  startedAt: number
+  endedAt?: number
+  bytes: number
+}
+
+export interface AuditEvent {
+  id: string
+  at: number
+  action: string
+  target?: string
+  detail?: string
+  outcome: 'ok' | 'error' | 'info'
+}
+
 // ---- runbooks: multi-host, multi-step command orchestration ----
 
 export interface RunbookStep {

@@ -4,16 +4,50 @@ import { join } from 'path'
 import { Store } from './store'
 import { SSHManager } from './ssh/SSHManager'
 import { registerIpc } from './ipc'
+import { ActivityStore } from './activityStore'
 
 let mainWindow: BrowserWindow | null = null
+let splashWindow: BrowserWindow | null = null
 let store: Store
 let ssh: SSHManager
+let activity: ActivityStore
 
 const isMac = process.platform === 'darwin'
 const isWin = process.platform === 'win32'
 // Mica/Acrylic need Windows 11 (build 22000+)
 const winBuild = isWin ? parseInt(release().split('.')[2] ?? '0', 10) : 0
 export const supportsMaterial = isWin && winBuild >= 22000
+
+function createSplash(): void {
+  splashWindow = new BrowserWindow({
+    width: 360,
+    height: 220,
+    frame: false,
+    resizable: false,
+    movable: true,
+    alwaysOnTop: true,
+    show: true,
+    transparent: true,
+    skipTaskbar: true,
+    center: true,
+    webPreferences: { sandbox: true }
+  })
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:transparent}
+    body{display:grid;place-items:center;font-family:"Segoe UI Variable",Inter,sans-serif;color:#f3f7fb}
+    main{width:344px;height:204px;display:grid;place-items:center;align-content:center;gap:10px;
+      border:1px solid rgba(255,255,255,.13);border-radius:22px;background:rgba(13,17,23,.96);
+      box-shadow:0 22px 70px rgba(0,0,0,.48)}
+    .mark{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;
+      background:linear-gradient(145deg,#15b981,#087c5a);box-shadow:0 12px 34px rgba(16,185,129,.25);font-size:31px}
+    h1{font-size:25px;line-height:1;margin:2px 0 0;letter-spacing:-.6px}p{margin:0;color:#91a1b5;font-size:12px}
+    .load{width:72px;height:3px;margin-top:7px;border-radius:9px;overflow:hidden;background:#23303d}
+    .load:after{content:"";display:block;width:34px;height:100%;border-radius:9px;background:#10b981;animation:a 1s ease-in-out infinite alternate}
+    @keyframes a{from{transform:translateX(-16px)}to{transform:translateX(54px)}}
+  </style></head><body><main><div class="mark">🐜</div><h1>Termite</h1><p>AI-first SSH workspace</p><div class="load"></div></main></body></html>`
+  void splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  splashWindow.on('closed', () => (splashWindow = null))
+}
 
 function createWindow(): void {
   const effect = store.getSettings().windowEffect ?? 'mica'
@@ -42,7 +76,10 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
+  mainWindow.on('ready-to-show', () => {
+    splashWindow?.close()
+    mainWindow?.show()
+  })
   mainWindow.on('closed', () => (mainWindow = null))
 
   // open external links in the OS browser, never in-app
@@ -74,8 +111,9 @@ app.whenReady().then(() => {
   if (!isMac) Menu.setApplicationMenu(null)
 
   store = new Store()
-  ssh = new SSHManager(store)
-  registerIpc(store, ssh, () => mainWindow)
+  activity = new ActivityStore()
+  ssh = new SSHManager(store, activity)
+  registerIpc(store, ssh, activity, () => mainWindow)
 
   // clipboard lives in the main process — bulletproof on every platform.
   // read is sync (paste needs the text immediately in the key handler).
@@ -121,6 +159,7 @@ app.whenReady().then(() => {
     }
   })
 
+  createSplash()
   createWindow()
 
   app.on('activate', () => {

@@ -6,6 +6,7 @@ import type { AIRequest, AppSettings, Host, PortForward, Runbook, SSHKey, Snippe
 import { RunbookRunner } from './runbooks'
 import { Store } from './store'
 import { SSHManager } from './ssh/SSHManager'
+import { ActivityStore } from './activityStore'
 import {
   localList, sftpChmod, sftpDelete, sftpDownload, sftpDownloadDir, sftpList,
   sftpMkdir, sftpRealpath, sftpRename, sftpUpload, sftpUploadDir
@@ -14,7 +15,7 @@ import { generateSSHKey } from './keygen'
 import { runAI } from './ai'
 import { importSSHConfig } from './sshConfigImport'
 
-export function registerIpc(store: Store, ssh: SSHManager, getWindow: () => BrowserWindow | null): void {
+export function registerIpc(store: Store, ssh: SSHManager, activity: ActivityStore, getWindow: () => BrowserWindow | null): void {
   const send = (channel: string, ...args: unknown[]): void => {
     getWindow()?.webContents.send(channel, ...args)
   }
@@ -90,6 +91,9 @@ export function registerIpc(store: Store, ssh: SSHManager, getWindow: () => Brow
   // ---- settings ----
   ipcMain.handle('settings:get', () => store.getSettings())
   ipcMain.handle('settings:save', (_e, s: AppSettings) => store.saveSettings(s))
+  ipcMain.handle('activity:sessions', (_e, query?: string) => activity.list(query))
+  ipcMain.handle('activity:session', (_e, id: string) => activity.read(id))
+  ipcMain.handle('activity:audit', (_e, query?: string) => activity.listAudit(query))
 
   // ---- ssh shell ----
   ipcMain.handle('ssh:connect', async (_e, hostId: string, cols: number, rows: number) => {

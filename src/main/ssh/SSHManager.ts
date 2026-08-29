@@ -5,6 +5,7 @@ import { EventEmitter } from 'events'
 import { v4 as uuid } from 'uuid'
 import type { Host, PortForward } from '../../shared/types'
 import type { Store } from '../store'
+import type { ActivityStore } from '../activityStore'
 
 export interface ShellSession {
   sessionId: string
@@ -44,7 +45,7 @@ export class SSHManager extends EventEmitter {
   private sftps = new Map<string, SftpSession>()
   private forwards = new Map<string, ActiveForward>()
 
-  constructor(private store: Store) {
+  constructor(private store: Store, private activity?: ActivityStore) {
     super()
   }
 
@@ -177,9 +178,11 @@ export class SSHManager extends EventEmitter {
       const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [] }
       this.shells.set(sessionId, session)
       this.store.touchHost(hostId)
+      this.activity?.start(sessionId, hostId, host.label)
 
       channel.on('data', (data: Buffer) => {
         const text = data.toString('utf8')
+        this.activity?.append(sessionId, text)
         session.recentOutput.push(text)
         // keep roughly the last 64KB for AI context
         while (session.recentOutput.reduce((n, s) => n + s.length, 0) > 65536) {
@@ -189,11 +192,13 @@ export class SSHManager extends EventEmitter {
       })
       channel.stderr?.on('data', (data: Buffer) => this.emit('session:data', sessionId, data))
       channel.on('close', () => {
+        this.activity?.end(sessionId)
         this.emit('session:status', { sessionId, hostId, hostLabel: host.label, status: 'disconnected' })
         this.shells.delete(sessionId)
         client.end()
       })
       client.on('error', (err) => {
+        this.activity?.end(sessionId, 'error')
         this.emit('session:status', {
           sessionId, hostId, hostLabel: host.label, status: 'error', error: err.message
         })

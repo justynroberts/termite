@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
-  AIRequest, AIResponse, AppSettings, FileEntry, Host, PortForward,
-  KnownHost, Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
+  AIRequest, AIResponse, AppSettings, AuditEvent, FileEntry, Host, PortForward,
+  KnownHost, Runbook, RunbookEvent, SessionLogSummary, SSHKey, SessionInfo, Snippet, TransferProgress
 } from '../shared/types'
 
 export interface TermiteAPI {
@@ -26,6 +26,11 @@ export interface TermiteAPI {
   settings: {
     get(): Promise<AppSettings>
     save(s: AppSettings): Promise<void>
+  }
+  activity: {
+    sessions(query?: string): Promise<SessionLogSummary[]>
+    session(id: string): Promise<string>
+    audit(query?: string): Promise<AuditEvent[]>
   }
   ssh: {
     connect(hostId: string, cols: number, rows: number): Promise<string>
@@ -121,6 +126,11 @@ const api: TermiteAPI = {
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     save: (s) => ipcRenderer.invoke('settings:save', s)
+  },
+  activity: {
+    sessions: (query) => ipcRenderer.invoke('activity:sessions', query),
+    session: (id) => ipcRenderer.invoke('activity:session', id),
+    audit: (query) => ipcRenderer.invoke('activity:audit', query)
   },
   ssh: {
     connect: (hostId, cols, rows) => ipcRenderer.invoke('ssh:connect', hostId, cols, rows),
