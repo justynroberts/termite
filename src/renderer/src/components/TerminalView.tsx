@@ -322,12 +322,14 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
 
     return () => {
       disposed = true
+      startedRef.current = false
       el.removeEventListener('contextmenu', onContextMenu)
       el.removeEventListener('focusin', onFocusIn)
       el.removeEventListener('mousedown', onMouseDown)
       unsubData?.()
       term.dispose()
       termRef.current = null
+      fitRef.current = null
       copyRef.current = () => undefined
       pasteRef.current = () => undefined
       searchRef.current = () => undefined
