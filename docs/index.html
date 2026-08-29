@@ -1,0 +1,325 @@
+<!doctype html>
+<!-- MIT License - Copyright (c) fintonlabs.com -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Termite — AI-first SSH client for macOS and Windows</title>
+<meta name="description" content="Termite is a modern, AI-first SSH client for Windows and macOS. Tabbed terminals, split panes, SFTP, tunnels, fleet runbooks and a Claude-powered copilot in one fast desktop app. MIT licensed.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Termite — AI-first SSH client">
+<meta property="og:description" content="Terminal, file transfer, tunnels, multi-host runbooks and a Claude-powered copilot — in one fast desktop app. MIT licensed.">
+<meta property="og:image" content="https://justynroberts.github.io/termite/icon.png">
+<meta name="twitter:card" content="summary">
+
+<!-- apply stored theme before first paint: no flash -->
+<script>
+  try {
+    var t = localStorage.getItem('termite-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="nav">
+  <a class="brand" href="./">
+    <img src="icon.png" alt="" width="30" height="30">
+    Termite
+  </a>
+  <span class="ver" id="ver">v0.6.4</span>
+  <span class="nav-spacer"></span>
+  <div class="nav-links">
+    <a href="#copilot" class="hide-sm">Copilot</a>
+    <a href="#runbooks" class="hide-sm">Runbooks</a>
+    <a href="#terminal" class="hide-sm">Terminal</a>
+    <a href="#security" class="hide-sm">Security</a>
+    <a href="https://github.com/justynroberts/termite" rel="noopener">GitHub</a>
+    <button class="icon-btn" id="theme" aria-label="Switch colour theme" title="Switch colour theme">
+      <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></svg>
+      <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 1 1 9.4 3.5a6.9 6.9 0 0 0 11.1 11.1z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow rv">MIT licensed · Windows &amp; macOS</p>
+      <h1 class="poster">
+        <span class="rv" style="--d:60ms">Every box.</span>
+        <span class="l2 rv" style="--d:150ms">One window.</span>
+        <span class="l3 rv" style="--d:240ms">Ask it anything.</span>
+      </h1>
+      <p class="hero-lede rv" style="--d:340ms">
+        An <b>AI-first SSH client</b>. Tabbed terminals and split panes, dual-pane SFTP,
+        port forwarding, fleet-wide runbooks — and a Claude copilot that has actually
+        read your last error.
+      </p>
+      <div class="cta-row rv" style="--d:420ms">
+        <a class="btn" id="dl-mac" href="https://github.com/justynroberts/termite/releases/latest" rel="noopener">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.3 12.7c0-2.4 1.9-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.9-1.4-.2-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.3 1.2-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.7zM14.1 5.3c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.8-1.3z"/></svg>
+          Download for macOS <small>.dmg</small>
+        </a>
+        <a class="btn btn--ghost" id="dl-win" href="https://github.com/justynroberts/termite/releases/latest" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.6l7.3-1v7.1H3zM11.5 4.4L21 3v8.7h-9.5zM3 12.9h7.3V20L3 18.9zM11.5 12.9H21V21l-9.5-1.3z"/></svg>
+          Download for Windows <small>.exe</small>
+        </a>
+      </div>
+      <p class="cta-note rv" style="--d:500ms">Universal build (Apple Silicon + Intel) · portable .exe available · no account, no telemetry</p>
+    </div>
+
+    <div class="term rv" style="--d:300ms" id="term" aria-label="Illustration of a Termite terminal session">
+      <div class="term-bar" aria-hidden="true">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="term-tabs">
+          <span class="term-tab on">web-01</span>
+          <span class="term-tab">db-primary</span>
+          <span class="term-tab">edge-eu</span>
+        </div>
+      </div>
+      <div class="term-body" id="term-body" aria-hidden="true"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ STRIP ============ -->
+<section class="field" style="padding-top:0;padding-bottom:0;border-top:0">
+  <dl class="strip wrap" style="max-width:none">
+    <div><dt class="rv">8</dt><dd>split panes per tab</dd></div>
+    <div><dt class="rv" style="--d:70ms">10</dt><dd>terminal themes</dd></div>
+    <div><dt class="rv" style="--d:140ms">4</dt><dd>coding fonts bundled</dd></div>
+    <div><dt class="rv" style="--d:210ms">3</dt><dd>tunnel modes</dd></div>
+    <div><dt class="rv" style="--d:280ms">0</dt><dd>secrets in the renderer</dd></div>
+  </dl>
+</section>
+
+<!-- ============ COPILOT ============ -->
+<section class="field field--ink" id="copilot">
+  <div class="wrap grid12">
+    <div class="col-statement">
+      <p class="eyebrow rv">01 — AI Copilot · <span class="mono">Ctrl / Cmd + K</span></p>
+      <h2 class="statement rv" style="--d:80ms">It has already read <span class="vio">your</span> error.</h2>
+      <p class="lede rv" style="--d:160ms">
+        Most tools bolt a chat box onto a terminal. Termite hands the copilot your actual
+        recent output, so “explain last error” explains <em>yours</em> — not a plausible
+        one. Describe what you want in English, get the exact command back with
+        <b>Run</b>, <b>Insert</b> and <b>Copy</b> next to it. Nothing executes until you click.
+      </p>
+    </div>
+    <ul class="detail col-detail">
+      <li class="rv" style="--d:220ms"><span><b>Explain last error</b> — reads the real scrollback of the focused pane</span></li>
+      <li class="rv" style="--d:280ms"><span><b>Explain output</b> and <b>summarize session</b> for long-running work</span></li>
+      <li class="rv" style="--d:340ms"><span>Destructive commands come back with guardrails attached</span></li>
+      <li class="rv" style="--d:400ms"><span>Bring your own Anthropic key — it is sent to Anthropic and nowhere else</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ RUNBOOKS ============ -->
+<section class="field" id="runbooks">
+  <div class="wrap grid12 flip">
+    <div class="col-statement">
+      <p class="eyebrow rv">02 — Runbooks</p>
+      <h2 class="statement rv" style="--d:80ms">Patch the fleet, <em>not the host</em>.</h2>
+      <p class="lede rv" style="--d:160ms">
+        Multi-step, multi-host orchestration built into the client you already have open.
+        Each step targets one or many hosts, in parallel or rolling one at a time, with
+        fail-fast or continue-on-error per step. Describe the job in plain English and
+        Claude drafts the steps — pre-checks, change, verification — for you to review
+        before anything runs.
+      </p>
+    </div>
+    <ul class="detail col-detail">
+      <li class="rv" style="--d:220ms"><span>Live run view: step timeline, per-host status and exit codes</span></li>
+      <li class="rv" style="--d:280ms"><span>Streaming collapsible output, cancel mid-run</span></li>
+      <li class="rv" style="--d:340ms"><span>Per-step interpreter — login shell, bash, or PowerShell for Windows hosts</span></li>
+      <li class="rv" style="--d:400ms"><span>Optional timeouts per step</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ TERMINAL ============ -->
+<section class="field field--tint" id="terminal">
+  <div class="wrap grid12">
+    <div class="col-statement">
+      <p class="eyebrow rv">03 — Terminal</p>
+      <h2 class="statement rv" style="--d:80ms">Powerline that <em>just renders</em>.</h2>
+      <p class="lede rv" style="--d:160ms">
+        xterm.js on the WebGL renderer, 256 colour. The core Powerline glyphs are drawn by
+        the renderer itself in any font, and Symbols Nerd Font ships in the box for the
+        extended set — so your prompt looks right on a machine you set up ten seconds ago.
+        Up to eight live panes per tab, and <b>Zen mode</b> to throw every scrap of chrome away.
+      </p>
+    </div>
+    <ul class="detail col-detail">
+      <li class="rv" style="--d:220ms"><span><b>Clipboard done right</b> — <code>Ctrl+C</code> copies on a selection, SIGINT otherwise; optional copy-on-select</span></li>
+      <li class="rv" style="--d:280ms"><span>Panes auto-collapse when their shell exits</span></li>
+      <li class="rv" style="--d:340ms"><span>Windows 11 Mica / Acrylic materials; macOS vibrancy</span></li>
+      <li class="rv" style="--d:400ms"><span>Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, One Dark, Monokai, Solarized…</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ CAPABILITIES ============ -->
+<section class="field" id="everything">
+  <div class="wrap">
+    <p class="eyebrow rv">04 — And the rest of the job</p>
+    <h2 class="statement rv" style="--d:80ms;max-width:18ch">One app, <em>end to end</em>.</h2>
+    <div class="caps">
+      <div class="cap rv" style="--d:140ms">
+        <h3><span class="kicker-n">01</span> Host vault</h3>
+        <p>Groups, tags, colours and search. Double-click to connect, right-click to edit, row buttons for terminal / SFTP / edit / delete. Import straight from <code>~/.ssh/config</code>.</p>
+      </div>
+      <div class="cap rv" style="--d:200ms">
+        <h3><span class="kicker-n">02</span> Auth &amp; bastions</h3>
+        <p>Password, SSH key and SSH agent (Windows OpenSSH agent and <code>SSH_AUTH_SOCK</code>), with jump-host chaining for anything behind a bastion.</p>
+      </div>
+      <div class="cap rv" style="--d:260ms">
+        <h3><span class="kicker-n">03</span> Keys</h3>
+        <p>Generate ed25519 or RSA-4096 in-app, copy the public key for <code>authorized_keys</code> in one click, or import a private key you already have.</p>
+      </div>
+      <div class="cap rv" style="--d:320ms">
+        <h3><span class="kicker-n">04</span> Files</h3>
+        <p>Dual-pane local ⇄ remote SFTP. Upload and download whole directories with live progress; mkdir, recursive delete, rename, path bar, multi-select.</p>
+      </div>
+      <div class="cap rv" style="--d:380ms">
+        <h3><span class="kicker-n">05</span> Tunnels</h3>
+        <p>Local, remote and dynamic SOCKS5 port forwarding, each with start/stop control from the same window as the shell using it.</p>
+      </div>
+      <div class="cap rv" style="--d:440ms">
+        <h3><span class="kicker-n">06</span> Snippets</h3>
+        <p>Save the commands you type constantly and fire them into the focused pane with one click.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SHORTCUTS ============ -->
+<section class="field field--tint" id="shortcuts">
+  <div class="wrap grid12 flip">
+    <div class="col-statement">
+      <p class="eyebrow rv">05 — Keyboard</p>
+      <h2 class="statement rv" style="--d:80ms">Hands stay <em>where they are</em>.</h2>
+      <table class="keys rv" style="--d:160ms">
+        <thead><tr><th>Action</th><th style="text-align:right">Shortcut</th></tr></thead>
+        <tbody>
+          <tr><td>AI Copilot</td><td><kbd>Ctrl / Cmd</kbd> <kbd>K</kbd></td></tr>
+          <tr><td>Zen mode — fullscreen, chrome hidden</td><td><kbd>Ctrl / Cmd</kbd> <kbd>Shift</kbd> <kbd>Z</kbd></td></tr>
+          <tr><td>Split pane right</td><td><kbd>Ctrl / Cmd</kbd> <kbd>Shift</kbd> <kbd>E</kbd></td></tr>
+          <tr><td>Split pane down</td><td><kbd>Ctrl / Cmd</kbd> <kbd>Shift</kbd> <kbd>O</kbd></td></tr>
+          <tr><td>Close pane</td><td><kbd>Ctrl / Cmd</kbd> <kbd>Shift</kbd> <kbd>W</kbd></td></tr>
+          <tr><td>Close tab</td><td><kbd>Ctrl / Cmd</kbd> <kbd>W</kbd></td></tr>
+          <tr><td>Next / previous tab</td><td><kbd>Ctrl</kbd> <kbd>Tab</kbd></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="detail col-detail">
+      <li class="rv" style="--d:240ms"><span>Middle-click a tab to close it</span></li>
+      <li class="rv" style="--d:300ms"><span>Right-click copies the selection, or pastes when there isn’t one</span></li>
+      <li class="rv" style="--d:360ms"><span><code>exit</code> collapses a split pane like you’d expect</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ SECURITY ============ -->
+<section class="field" id="security">
+  <div class="wrap grid12">
+    <div class="col-statement">
+      <p class="eyebrow rv">06 — Security</p>
+      <h2 class="statement rv" style="--d:80ms">The renderer never sees <em>a single secret</em>.</h2>
+      <p class="lede rv" style="--d:160ms">
+        Passwords, private keys, passphrases and your API key are encrypted with the OS
+        keychain — DPAPI on Windows, Keychain on macOS, via Electron <code>safeStorage</code> —
+        before they touch disk. All SSH runs in the main process behind a typed IPC bridge
+        with <code>contextIsolation</code> on.
+      </p>
+    </div>
+    <ul class="detail col-detail">
+      <li class="rv" style="--d:220ms"><span>Host keys pinned on first use (TOFU); a changed fingerprint <b>refuses the connection</b></span></li>
+      <li class="rv" style="--d:280ms"><span>Your Anthropic key is only ever sent to the Anthropic API</span></li>
+      <li class="rv" style="--d:340ms"><span>No account, no sign-in, no telemetry</span></li>
+      <li class="rv" style="--d:400ms"><span>MIT licensed — read the whole thing on GitHub</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ DOWNLOAD ============ -->
+<section class="field field--ink" id="download">
+  <div class="wrap">
+    <p class="eyebrow rv">07 — Install</p>
+    <h2 class="statement rv" style="--d:80ms">Grab it and go.</h2>
+    <p class="lede rv" style="--d:160ms;max-width:52ch">
+      Latest installers live on the Releases page. Builds are unsigned, so the OS asks once:
+      Windows SmartScreen → <b>More info → Run anyway</b>; macOS → <b>right-click → Open</b> on
+      first launch.
+    </p>
+
+    <div class="dl-grid">
+      <div class="dl rv" style="--d:220ms">
+        <h3>macOS</h3>
+        <p>Universal disk image — Apple Silicon and Intel in one file.</p>
+        <span class="dl-file" id="f-mac">Termite-0.6.4-mac.dmg</span>
+        <a class="btn" href="https://github.com/justynroberts/termite/releases/latest" rel="noopener">Download .dmg</a>
+      </div>
+      <div class="dl rv" style="--d:280ms">
+        <h3>Windows</h3>
+        <p>Standard installer, or the portable build that needs no install at all.</p>
+        <span class="dl-file" id="f-win">Termite-Setup-0.6.4.exe · Termite-Portable-0.6.4.exe</span>
+        <a class="btn" href="https://github.com/justynroberts/termite/releases/latest" rel="noopener">Download .exe</a>
+      </div>
+      <div class="dl rv" style="--d:340ms">
+        <h3>From source</h3>
+        <p>Electron + Vite. Clone it, <code>npm install</code>, <code>npm run dev</code>.</p>
+        <span class="dl-file">npm run package:mac · npm run package:win</span>
+        <a class="btn btn--ghost" href="https://github.com/justynroberts/termite" rel="noopener">View on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span>Termite — MIT licensed. © 2026 Justyn Roberts.</span>
+  <span class="nav-spacer"></span>
+  <a href="https://github.com/justynroberts/termite" rel="noopener">Source</a>
+  <a href="https://github.com/justynroberts/termite/releases" rel="noopener">Releases</a>
+  <a href="https://github.com/justynroberts/termite/blob/main/LICENSE" rel="noopener">Licence</a>
+  <a href="mailto:justyn@fintonlabs.com">justyn@fintonlabs.com</a>
+</footer>
+
+<button class="info-btn" id="info-btn" aria-label="About this app" title="About">i</button>
+
+<dialog class="about" id="about">
+  <div class="about-in">
+    <h2>Termite</h2>
+    <p>A modern, AI-first SSH client for Windows and macOS.</p>
+    <div class="about-rows">
+      <div><span>Version</span><span class="mono" id="about-ver">0.6.4</span></div>
+      <div><span>Licence</span><span class="mono">MIT</span></div>
+      <div><span>Source</span><a href="https://github.com/justynroberts/termite" target="_blank" rel="noopener">github.com/justynroberts/termite</a></div>
+      <div><span>Made by</span><a href="https://fintonlabs.com" target="_blank" rel="noopener">Made by FintonLabs</a></div>
+    </div>
+  </div>
+  <div class="about-foot">
+    <button class="btn btn--ghost" id="about-close">Close</button>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
