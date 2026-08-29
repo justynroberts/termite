@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import type { AIRequest } from '../../../shared/types'
 import { useApp } from '../state'
-import { IconCopy, IconPlay, IconSend, IconSparkle, IconX } from '../icons'
+import { IconCopy, IconFile, IconPlay, IconRefresh, IconSearch, IconSend, IconTermite, IconX } from '../icons'
 
 interface Msg {
   role: 'user' | 'assistant'
@@ -80,7 +80,7 @@ export default function AIDrawer(): JSX.Element {
     <div className="ai-drawer">
       <div className="ai-header">
         <span className="title">
-          <IconSparkle size={16} /> AI Copilot
+          <IconTermite size={18} /> Termite AI
         </span>
         <button className="icon-btn" onClick={() => setAiOpen(false)}>
           <IconX size={15} />
@@ -128,24 +128,24 @@ export default function AIDrawer(): JSX.Element {
         <div className="ai-quick-actions">
           <button
             className="chip"
-            onClick={() => ask('explain-error', 'Explain the most recent error in my terminal and how to fix it.', '⚡ Explain last error')}
+            onClick={() => ask('explain-error', 'Explain the most recent error in my terminal and how to fix it.', 'Explain last error')}
             disabled={!hasTerminal || busy}
           >
-            ⚡ Explain last error
+            <IconRefresh size={12} /> Explain last error
           </button>
           <button
             className="chip"
-            onClick={() => ask('explain-output', 'Explain what the recent terminal output means.', '🔍 Explain output')}
+            onClick={() => ask('explain-output', 'Explain what the recent terminal output means.', 'Explain output')}
             disabled={!hasTerminal || busy}
           >
-            🔍 Explain output
+            <IconSearch size={12} /> Explain output
           </button>
           <button
             className="chip"
-            onClick={() => ask('summarize', 'Summarize this terminal session.', '📝 Summarize session')}
+            onClick={() => ask('summarize', 'Summarize this terminal session.', 'Summarize session')}
             disabled={!hasTerminal || busy}
           >
-            📝 Summarize session
+            <IconFile size={12} /> Summarize session
           </button>
         </div>
         <div className="ai-input-box">

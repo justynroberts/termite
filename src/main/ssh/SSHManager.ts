@@ -58,7 +58,7 @@ export class SSHManager extends EventEmitter {
       host: host.hostname,
       port: host.port || 22,
       username: host.username,
-      readyTimeout: 20000,
+      readyTimeout: 45000,
       keepaliveInterval: 15000,
       keepaliveCountMax: 3,
       hostVerifier: (key: Buffer, verify: (ok: boolean) => void) => {

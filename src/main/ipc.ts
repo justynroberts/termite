@@ -12,7 +12,7 @@ import {
   sftpMkdir, sftpRealpath, sftpRename, sftpUpload, sftpUploadDir
 } from './ssh/sftpOps'
 import { generateSSHKey } from './keygen'
-import { runAI } from './ai'
+import { runAI, testAI } from './ai'
 import { importSSHConfig } from './sshConfigImport'
 
 export function registerIpc(store: Store, ssh: SSHManager, activity: ActivityStore, getWindow: () => BrowserWindow | null): void {
@@ -197,4 +197,5 @@ export function registerIpc(store: Store, ssh: SSHManager, activity: ActivitySto
     }
     return runAI(store, req)
   })
+  ipcMain.handle('ai:test', () => testAI(store))
 }

@@ -663,12 +663,16 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 .ai-drawer {
   width: 380px; border-left: 1px solid var(--border);
   background: var(--bg-1); display: flex; flex-direction: column; flex-shrink: 0;
+  box-shadow: -18px 0 45px rgba(0, 0, 0, 0.2);
+  animation: ai-drawer-in 180ms cubic-bezier(.2,.8,.2,1);
 }
+@keyframes ai-drawer-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .ai-header {
   padding: 12px 14px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
 .ai-header .title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.api-key-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .ai-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .ai-msg { border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55; max-width: 100%; user-select: text; }
 .ai-msg.user { background: var(--bg-3); align-self: flex-end; max-width: 85%; }

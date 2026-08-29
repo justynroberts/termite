@@ -99,6 +99,16 @@ export const IconSparkle = ({ size }: IconProps): JSX.Element =>
     size
   )
 
+export const IconTermite = ({ size }: IconProps): JSX.Element =>
+  svg(
+    <>
+      <ellipse cx="12" cy="13" rx="4" ry="5" />
+      <circle cx="12" cy="6.5" r="2.5" />
+      <path d="M10.5 4.5 8.5 2M13.5 4.5 15.5 2M8 10 4.5 7.5M8 13H3.5M8.5 16.5 5 20M16 10l3.5-2.5M16 13h4.5M15.5 16.5 19 20" />
+    </>,
+    size
+  )
+
 export const IconPlus = ({ size }: IconProps): JSX.Element =>
   svg(
     <>

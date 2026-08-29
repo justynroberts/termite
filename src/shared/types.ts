@@ -83,7 +83,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cursorBlink: true,
   scrollback: 10000,
   aiEnabled: true,
-  aiModel: 'claude-sonnet-5',
+  aiModel: 'claude-sonnet-4-5-20250929',
   terminalTheme: 'termite-dark',
   confirmOnClose: true,
   windowEffect: 'mica',

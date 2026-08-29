@@ -9,6 +9,7 @@ export default function SettingsPanel(): JSX.Element {
   const [dirty, setDirty] = useState(false)
   const appliedSettings = useRef(settings)
   const [knownHosts, setKnownHosts] = useState<KnownHost[]>([])
+  const [aiTest, setAiTest] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle')
 
   useEffect(() => {
     appliedSettings.current = settings
@@ -45,6 +46,15 @@ export default function SettingsPanel(): JSX.Element {
     await window.termite.ssh.removeKnownHost(entry.host)
     setKnownHosts((current) => current.filter((known) => known.host !== entry.host))
     toast(`${entry.host} forgotten — reconnect to verify and trust its new key`, 'warn')
+  }
+
+  const testApiKey = async (): Promise<void> => {
+    setAiTest('testing')
+    await saveSettings(form)
+    setDirty(false)
+    const result = await window.termite.ai.test()
+    setAiTest(result.ok ? 'ok' : 'error')
+    toast(result.ok ? 'Claude API key connected' : `Claude connection failed: ${result.error}`, result.ok ? 'info' : 'error')
   }
 
   return (
@@ -168,16 +178,21 @@ export default function SettingsPanel(): JSX.Element {
             <span className="hint">AI copilot panel, natural-language commands, error explanations</span>
           </div>
           <label>API key</label>
-          <input
-            type="password"
-            value={form.anthropicApiKey ?? ''}
-            placeholder="sk-ant-…"
-            onChange={(e) => set('anthropicApiKey', e.target.value)}
-          />
+          <div className="api-key-row">
+            <input
+              type="password"
+              value={form.anthropicApiKey ?? ''}
+              placeholder="sk-ant-api03-…"
+              onChange={(e) => { set('anthropicApiKey', e.target.value); setAiTest('idle') }}
+            />
+            <button className="btn" onClick={() => void testApiKey()} disabled={aiTest === 'testing' || !form.anthropicApiKey}>
+              {aiTest === 'testing' ? 'Testing…' : aiTest === 'ok' ? 'Connected' : 'Save & test'}
+            </button>
+          </div>
           <label>Model</label>
           <select value={form.aiModel} onChange={(e) => set('aiModel', e.target.value)}>
-            <option value="claude-sonnet-5">Claude Sonnet 5 (recommended)</option>
-            <option value="claude-opus-4-8">Claude Opus 4.8 (most capable)</option>
+            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (recommended)</option>
+            <option value="claude-opus-4-1-20250805">Claude Opus 4.1 (most capable)</option>
             <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest)</option>
           </select>
         </div>

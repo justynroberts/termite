@@ -82,6 +82,7 @@ export interface TermiteAPI {
   }
   ai: {
     run(req: AIRequest, sessionId?: string): Promise<AIResponse>
+    test(): Promise<AIResponse>
   }
   windowFx: {
     capabilities(): Promise<{ material: boolean; platform: string }>
@@ -183,7 +184,8 @@ const api: TermiteAPI = {
     onEvent: (cb) => sub('runbook:event', cb as (...args: unknown[]) => void)
   },
   ai: {
-    run: (req, sessionId) => ipcRenderer.invoke('ai:run', req, sessionId)
+    run: (req, sessionId) => ipcRenderer.invoke('ai:run', req, sessionId),
+    test: () => ipcRenderer.invoke('ai:test')
   },
   windowFx: {
     capabilities: () => ipcRenderer.invoke('window:capabilities'),

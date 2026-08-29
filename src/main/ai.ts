@@ -45,7 +45,7 @@ export async function runAI(store: Store, req: AIRequest): Promise<AIResponse> {
 
   try {
     const message = await client.messages.create({
-      model: settings.aiModel || 'claude-sonnet-5',
+      model: settings.aiModel || 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       system: SYSTEM_PROMPTS[req.kind],
       messages: [{ role: 'user', content: userContent }]
@@ -64,5 +64,21 @@ export async function runAI(store: Store, req: AIRequest): Promise<AIResponse> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return { ok: false, error: msg }
+  }
+}
+
+export async function testAI(store: Store): Promise<AIResponse> {
+  const apiKey = store.getApiKey()
+  if (!apiKey) return { ok: false, error: 'No Anthropic API key is saved.' }
+  try {
+    const client = new Anthropic({ apiKey })
+    await client.messages.create({
+      model: store.getSettings().aiModel || 'claude-sonnet-4-5-20250929',
+      max_tokens: 8,
+      messages: [{ role: 'user', content: 'Reply OK' }]
+    })
+    return { ok: true, text: 'Connected' }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
   }
 }

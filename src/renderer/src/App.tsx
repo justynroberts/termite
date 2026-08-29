@@ -12,7 +12,7 @@ import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
 import AboutModal from './components/AboutModal'
 import {
-  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconSparkle,
+  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconTermite,
   IconBroadcast, IconDuplicate, IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
@@ -157,7 +157,7 @@ export default function App(): JSX.Element {
           title="AI Copilot (Ctrl+K)"
           onClick={() => setAiOpen((v) => !v)}
         >
-          <IconSparkle />
+          <IconTermite />
         </button>
         <button
           className={`activity-btn ${view === 'settings' ? 'active' : ''}`}
