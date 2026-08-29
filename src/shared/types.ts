@@ -202,6 +202,9 @@ export interface AIRequest {
   /** recent terminal output for context */
   terminalContext?: string
   osHint?: string
+  /** bounded conversation history for the active host/session */
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>
+  hostLabel?: string
 }
 
 export interface AIResponse {

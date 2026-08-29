@@ -16,6 +16,7 @@ export interface ShellSession {
   recentOutput: string[]
   /** Output received before the renderer subscribes to this new session. */
   pendingOutput: string[]
+  subscribed: boolean
 }
 
 export interface SftpSession {
@@ -178,27 +179,27 @@ export class SSHManager extends EventEmitter {
         )
       })
 
-      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [], pendingOutput: [] }
+      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [], pendingOutput: [], subscribed: false }
       this.shells.set(sessionId, session)
       this.store.touchHost(hostId)
       this.activity?.start(sessionId, hostId, host.label)
 
       channel.on('data', (data: Buffer) => {
         const text = data.toString('utf8')
-        session.pendingOutput.push(text)
+        if (!session.subscribed) session.pendingOutput.push(text)
         this.activity?.append(sessionId, text)
         session.recentOutput.push(text)
         // keep roughly the last 64KB for AI context
         while (session.recentOutput.reduce((n, s) => n + s.length, 0) > 65536) {
           session.recentOutput.shift()
         }
-        this.emit('session:data', sessionId, data)
+        if (session.subscribed) this.emit('session:data', sessionId, data)
       })
       channel.stderr?.on('data', (data: Buffer) => {
         const text = data.toString('utf8')
-        session.pendingOutput.push(text)
+        if (!session.subscribed) session.pendingOutput.push(text)
         this.activity?.append(sessionId, text)
-        this.emit('session:data', sessionId, data)
+        if (session.subscribed) this.emit('session:data', sessionId, data)
       })
       channel.on('close', () => {
         this.closedOutput.set(sessionId, session.pendingOutput.join(''))
@@ -249,7 +250,10 @@ export class SSHManager extends EventEmitter {
 
   subscribe(sessionId: string): string {
     const session = this.shells.get(sessionId)
-    if (session) return session.pendingOutput.splice(0).join('')
+    if (session) {
+      session.subscribed = true
+      return session.pendingOutput.splice(0).join('')
+    }
     const closed = this.closedOutput.get(sessionId) ?? ''
     this.closedOutput.delete(sessionId)
     return closed

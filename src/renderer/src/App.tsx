@@ -11,8 +11,9 @@ import TerminalPane from './components/TerminalView'
 import SftpView from './components/SftpView'
 import AIDrawer from './components/AIDrawer'
 import AboutModal from './components/AboutModal'
+import TermiteLogo from './components/TermiteLogo'
 import {
-  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet, IconTermite,
+  IconForward, IconKey, IconRunbook, IconServer, IconSettings, IconSnippet,
   IconBroadcast, IconDuplicate, IconSplitDown, IconSplitRight, IconX
 } from './icons'
 import { formatBytes } from './state'
@@ -128,7 +129,7 @@ export default function App(): JSX.Element {
       )}
       <div className={`titlebar ${window.termite.platform === 'darwin' ? 'mac' : ''}`}>
         <button className="titlebar-logo" title="About Termite" onClick={() => setAboutOpen(true)}>
-          🐜
+          <TermiteLogo size={22} />
         </button>
         <span className="titlebar-title">Termite</span>
         {activeTab && <span className="titlebar-sub">— {activeTab.title}</span>}
@@ -331,7 +332,7 @@ export default function App(): JSX.Element {
           aria-label="Toggle Termite AI"
           onClick={() => setAiOpen((value) => !value)}
         >
-          <IconTermite size={17} />
+          <TermiteLogo size={19} />
           <span>AI</span>
         </button>
       )}
