@@ -661,8 +661,9 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 
 /* ---------- AI drawer ---------- */
 .ai-drawer {
-  width: 380px; border-left: 1px solid var(--border);
-  background: var(--bg-1); display: flex; flex-direction: column; flex-shrink: 0;
+  position: fixed; z-index: 70; top: 38px; right: 0; bottom: 0;
+  width: min(380px, calc(100vw - 48px)); border-left: 1px solid var(--border);
+  background: var(--bg-1); display: flex; flex-direction: column;
   box-shadow: -18px 0 45px rgba(0, 0, 0, 0.2);
   animation: ai-drawer-in 180ms cubic-bezier(.2,.8,.2,1);
 }
@@ -677,7 +678,7 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 }
 .ai-edge-tab span { font-size: 10px; font-weight: 700; letter-spacing: .08em; }
 .ai-edge-tab:hover, .ai-edge-tab.open { background: var(--accent-dim); }
-.ai-edge-tab.open { right: 380px; }
+.ai-edge-tab.open { right: min(380px, calc(100vw - 48px)); }
 .ai-header {
   padding: 12px 14px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;

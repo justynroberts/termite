@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
-import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
@@ -82,8 +81,8 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
       theme: themedBackground(settings.terminalTheme).theme,
       allowTransparency: true,
       allowProposedApi: true,
-      // draw Powerline glyphs (U+E0B0–E0B7 triangles/half-circles) and box-drawing
-      // characters pixel-perfectly regardless of font — needs the WebGL renderer
+      // Draw Powerline glyphs (U+E0B0–E0B7) and box-drawing characters
+      // pixel-perfectly without depending on a GPU-backed renderer.
       customGlyphs: true
     })
     const fit = new FitAddon()
@@ -142,13 +141,6 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     const search = new SearchAddon()
     term.loadAddon(search)
     term.open(containerRef.current)
-    try {
-      const webgl = new WebglAddon()
-      webgl.onContextLoss(() => webgl.dispose()) // falls back to DOM renderer
-      term.loadAddon(webgl)
-    } catch {
-      /* GPU unavailable — DOM renderer still works, minus drawn glyphs */
-    }
     fit.fit()
     termRef.current = term
     fitRef.current = fit
