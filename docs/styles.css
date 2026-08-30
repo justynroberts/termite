@@ -417,6 +417,16 @@ code, kbd, .mono { font-family: var(--font-mono); }
 }
 @media (max-width: 1000px) { .hero-grid { grid-template-columns: 1fr; } }
 
+/* The mark sits above the statement rather than beside it — the poster keeps a
+   single left edge, and a logo on that edge reads as part of the type block. */
+.hero-mark {
+  width: clamp(58px, 6vw, 76px);
+  height: auto;
+  border-radius: 18%;
+  margin: 0 0 1.5rem;
+  box-shadow: 0 10px 30px #0000002e;
+}
+
 h1.poster {
   font-size: clamp(2.9rem, 7.2vw, 6.4rem);
   line-height: .92;

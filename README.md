@@ -1,9 +1,21 @@
-# 🐜 Termite
+<p align="center">
+  <img src="build/icon.png" alt="" width="120" height="120">
+</p>
 
-A modern, **AI-first SSH client** for Windows and macOS. Terminal, file transfer, tunnels,
-multi-host runbooks, and a Claude-powered copilot — in one fast desktop app.
+<h1 align="center">Termite</h1>
 
-**MIT licensed** · written by [justyn@fintonlabs.com](mailto:justyn@fintonlabs.com) · enjoy!
+<p align="center">
+  A modern, <strong>AI-first SSH client</strong> for Windows and macOS.<br>
+  Terminal, file transfer, tunnels, multi-host runbooks, and a Claude-powered
+  copilot — in one fast desktop app.
+</p>
+
+<p align="center">
+  <a href="https://justynroberts.github.io/termite/"><strong>Website</strong></a> ·
+  <a href="../../releases/latest"><strong>Download</strong></a> ·
+  MIT licensed ·
+  <a href="mailto:justyn@fintonlabs.com">justyn@fintonlabs.com</a>
+</p>
 
 ## Install
 
