@@ -1,7 +1,24 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
-import type { AppSettings, KnownHost } from '../../../shared/types'
+import type { AppSettings, KnownHost, UpdateCheck } from '../../../shared/types'
+
 import { useApp } from '../state'
 import { TERMINAL_FONTS, TERMINAL_THEMES } from '../themes'
+
+/** One line of plain language per outcome; the details arrive as a native dialog. */
+function describe(result: UpdateCheck): string {
+  switch (result.status) {
+    case 'up-to-date':
+      return `Termite ${result.version} is the latest version.`
+    case 'downloading':
+      return `Termite ${result.version} is downloading — you'll be asked before it installs.`
+    case 'available':
+      return `Termite ${result.version} is available to download.`
+    case 'unsupported':
+      return result.message ?? 'Updates do not apply to this build.'
+    default:
+      return `Could not check: ${result.message ?? 'unknown error'}`
+  }
+}
 
 export default function SettingsPanel(): JSX.Element {
   const { settings, saveSettings, toast } = useApp()
@@ -23,6 +40,21 @@ export default function SettingsPanel(): JSX.Element {
   const set = <K extends keyof AppSettings>(k: K, v: AppSettings[K]): void => {
     setForm((f) => ({ ...f, [k]: v }))
     setDirty(true)
+  }
+
+  const [checking, setChecking] = useState(false)
+  const [checked, setChecked] = useState<UpdateCheck | null>(null)
+
+  // Deliberately not saved with the rest of the form: this is an action, not a
+  // preference, and it has to work whether or not there are unsaved edits.
+  const checkNow = async (): Promise<void> => {
+    setChecking(true)
+    setChecked(null)
+    try {
+      setChecked(await window.termite.updates.check())
+    } finally {
+      setChecking(false)
+    }
   }
 
   const applyAppearance = <K extends 'theme' | 'windowEffect' | 'terminalTheme'>(
@@ -236,6 +268,28 @@ export default function SettingsPanel(): JSX.Element {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="settings-section">
+        <h3>Updates</h3>
+        <div className="form-grid">
+          <label>Automatic</label>
+          <div className="checkbox-row">
+            <input type="checkbox" checked={form.autoUpdate} onChange={(e) => set('autoUpdate', e.target.checked)} />
+            <span className="hint">
+              Check GitHub Releases in the background and offer new versions. Never while a
+              runbook or file transfer is running.
+            </span>
+          </div>
+
+          <label>Check now</label>
+          <div className="checkbox-row">
+            <button className="btn" onClick={checkNow} disabled={checking}>
+              {checking ? 'Checking…' : 'Check for updates'}
+            </button>
+            {checked && <span className="hint">{describe(checked)}</span>}
+          </div>
+        </div>
       </div>
 
       <button className="btn primary" onClick={save} disabled={!dirty}>

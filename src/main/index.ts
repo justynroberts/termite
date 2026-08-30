@@ -5,6 +5,7 @@ import { Store } from './store'
 import { SSHManager } from './ssh/SSHManager'
 import { registerIpc } from './ipc'
 import { ActivityStore } from './activityStore'
+import { setupUpdates } from './updater'
 
 let mainWindow: BrowserWindow | null = null
 let splashWindow: BrowserWindow | null = null
@@ -113,7 +114,7 @@ app.whenReady().then(() => {
   store = new Store()
   activity = new ActivityStore()
   ssh = new SSHManager(store, activity)
-  registerIpc(store, ssh, activity, () => mainWindow)
+  const { getUpdateActivity } = registerIpc(store, ssh, activity, () => mainWindow)
 
   // clipboard lives in the main process — bulletproof on every platform.
   // read is sync (paste needs the text immediately in the key handler).
@@ -161,6 +162,14 @@ app.whenReady().then(() => {
 
   createSplash()
   createWindow()
+
+  // After the window exists: the updater attaches a focus listener to it, and
+  // every dialog it raises is modal to it.
+  setupUpdates({
+    getWindow: () => mainWindow,
+    getActivity: getUpdateActivity,
+    isEnabled: () => store.getSettings().autoUpdate
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

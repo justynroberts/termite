@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AIRequest, AIResponse, AppSettings, AuditEvent, FileEntry, Host, PortForward,
-  KnownHost, Runbook, RunbookEvent, SessionLogSummary, SSHKey, SessionInfo, Snippet, TransferProgress
+  KnownHost, Runbook, RunbookEvent, SessionLogSummary, SSHKey, SessionInfo, Snippet,
+  TransferProgress, UpdateCheck
 } from '../shared/types'
 
 export interface TermiteAPI {
@@ -95,6 +96,10 @@ export interface TermiteAPI {
   clipboard: {
     readText(): string
     writeText(text: string): void
+  }
+  updates: {
+    /** Asks GitHub now. A newer build announces itself through a native dialog. */
+    check(): Promise<UpdateCheck>
   }
   appInfo(): Promise<{ version: string; electron: string; node: string; platform: string }>
   openExternal(url: string): Promise<void>
@@ -200,6 +205,9 @@ const api: TermiteAPI = {
   clipboard: {
     readText: () => ipcRenderer.sendSync('clipboard:read'),
     writeText: (text) => ipcRenderer.send('clipboard:write', text)
+  },
+  updates: {
+    check: () => ipcRenderer.invoke('updates:check')
   },
   appInfo: () => ipcRenderer.invoke('app:info'),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),

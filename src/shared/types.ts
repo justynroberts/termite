@@ -73,6 +73,8 @@ export interface AppSettings {
   windowEffect: 'mica' | 'acrylic' | 'solid'
   /** PuTTY-style: selecting text immediately copies it */
   copyOnSelect: boolean
+  /** Check GitHub Releases for a newer build in the background */
+  autoUpdate: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -87,7 +89,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   terminalTheme: 'termite-dark',
   confirmOnClose: true,
   windowEffect: 'mica',
-  copyOnSelect: false
+  copyOnSelect: false,
+  autoUpdate: true
+}
+
+/** Outcome of an explicit "check for updates" from Settings. */
+export interface UpdateCheck {
+  status: 'up-to-date' | 'available' | 'downloading' | 'unsupported' | 'error'
+  version?: string
+  message?: string
 }
 
 export interface SessionInfo {

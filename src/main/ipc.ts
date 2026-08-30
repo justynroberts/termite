@@ -14,8 +14,14 @@ import {
 import { generateSSHKey } from './keygen'
 import { runAI, testAI } from './ai'
 import { importSSHConfig } from './sshConfigImport'
+import { checkForUpdatesNow, type UpdateActivity } from './updater'
 
-export function registerIpc(store: Store, ssh: SSHManager, activity: ActivityStore, getWindow: () => BrowserWindow | null): void {
+export function registerIpc(
+  store: Store,
+  ssh: SSHManager,
+  activity: ActivityStore,
+  getWindow: () => BrowserWindow | null
+): { getUpdateActivity: () => UpdateActivity } {
   const send = (channel: string, ...args: unknown[]): void => {
     getWindow()?.webContents.send(channel, ...args)
   }
@@ -165,18 +171,36 @@ export function registerIpc(store: Store, ssh: SSHManager, activity: ActivitySto
     await sftpDelete(session.sftp, path, isDirectory)
     activity.audit('sftp.delete', store.getHostRaw(session.hostId)?.label, path, 'ok')
   })
+  // Counted so an update never offers to restart mid-transfer, which would
+  // leave a half-written file at the far end.
+  let transfersInFlight = 0
+  const tracked = async <T,>(work: () => Promise<T>): Promise<T> => {
+    transfersInFlight++
+    try {
+      return await work()
+    } finally {
+      transfersInFlight--
+    }
+  }
+
   ipcMain.handle('sftp:download', async (_e, sftpId: string, remotePath: string, localPath: string, isDirectory: boolean) => {
     const session = ssh.getSftp(sftpId)
     const onProgress = (p: unknown): void => send('transfer:progress', p)
-    if (isDirectory) await sftpDownloadDir(session.sftp, remotePath, localPath, onProgress)
-    else await sftpDownload(session.sftp, remotePath, localPath, onProgress)
+    await tracked(() =>
+      isDirectory
+        ? sftpDownloadDir(session.sftp, remotePath, localPath, onProgress)
+        : sftpDownload(session.sftp, remotePath, localPath, onProgress)
+    )
     activity.audit('sftp.download', store.getHostRaw(session.hostId)?.label, `${remotePath} → ${localPath}`, 'ok')
   })
   ipcMain.handle('sftp:upload', async (_e, sftpId: string, localPath: string, remotePath: string, isDirectory: boolean) => {
     const session = ssh.getSftp(sftpId)
     const onProgress = (p: unknown): void => send('transfer:progress', p)
-    if (isDirectory) await sftpUploadDir(session.sftp, localPath, remotePath, onProgress)
-    else await sftpUpload(session.sftp, localPath, remotePath, onProgress)
+    await tracked(() =>
+      isDirectory
+        ? sftpUploadDir(session.sftp, localPath, remotePath, onProgress)
+        : sftpUpload(session.sftp, localPath, remotePath, onProgress)
+    )
     activity.audit('sftp.upload', store.getHostRaw(session.hostId)?.label, `${localPath} → ${remotePath}`, 'ok')
   })
 
@@ -243,4 +267,15 @@ export function registerIpc(store: Store, ssh: SSHManager, activity: ActivitySto
     return runAI(store, req)
   })
   ipcMain.handle('ai:test', () => testAI(store))
+
+  // ---- updates ----
+  ipcMain.handle('updates:check', () => checkForUpdatesNow())
+
+  return {
+    getUpdateActivity: () => ({
+      runbooks: runner.activeCount(),
+      transfers: transfersInFlight,
+      sessions: ssh.activeShellCount()
+    })
+  }
 }

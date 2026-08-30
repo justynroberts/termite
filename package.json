@@ -5,6 +5,10 @@
   "main": "out/main/index.js",
   "author": "Justyn Roberts <justyn@fintonlabs.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justynroberts/termite.git"
+  },
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
@@ -26,6 +30,7 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/source-code-pro": "^5.3.0",
+    "electron-updater": "^6.8.9",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "ssh2": "^1.16.0",
@@ -113,6 +118,13 @@
     },
     "dmg": {
       "artifactName": "${productName}-${version}-mac.${ext}"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "justynroberts",
+        "repo": "termite"
+      }
+    ]
   }
 }

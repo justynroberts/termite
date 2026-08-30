@@ -414,6 +414,11 @@ export class SSHManager extends EventEmitter {
     this.forwards.delete(id)
   }
 
+  /** Live terminal sessions — what an update restart would disconnect. */
+  activeShellCount(): number {
+    return this.shells.size
+  }
+
   listActiveForwards(): string[] {
     return [...this.forwards.keys()]
   }

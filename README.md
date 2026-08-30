@@ -107,6 +107,36 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
   Inter for the UI — all packaged, no network needed
 - Dark and light app themes
 
+## Updates
+
+Termite checks GitHub Releases for a newer build in the background — eight seconds
+after launch, every couple of hours, and when you bring the window back to the
+front. It never checks while a runbook or a file transfer is running, and it never
+restarts without asking: the restart drops every live SSH session, so the dialog
+says how many are open before you agree to it. Turn the whole thing off in
+**Settings → Updates**, which also has a **Check for updates** button.
+
+What happens next depends on which build you are running:
+
+| Build | Behaviour |
+|---|---|
+| **Windows installer** (`Termite-Setup-*.exe`) | Downloads in the background, then offers to restart and install |
+| **Windows portable** (`Termite-Portable-*.exe`) | Tells you a new version exists and opens the download — there is no installer to update through |
+| **macOS** (`.dmg`) | Tells you a new version exists and opens the download |
+
+macOS is download-only because the released builds are unsigned, and Squirrel.Mac
+will not let an app replace itself unless the new copy's signature satisfies the
+running one's designated requirement — an ad-hoc signature has no identity to
+satisfy it with. Adding a Developer ID to the release workflow (see
+[Code signing](#code-signing-optional-removes-os-warnings)) switches macOS to full
+background updates on its own; `src/main/updater.ts` detects the signature at
+startup and needs no change.
+
+Everything the updater does is written to `updater.log` in the app's log folder
+(`~/Library/Logs/Termite` on macOS, `%APPDATA%\Termite\logs` on Windows) — an
+update that fails silently is the one failure mode worth being able to diagnose
+after the fact.
+
 ## Development
 
 ```bash

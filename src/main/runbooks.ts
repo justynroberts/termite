@@ -49,6 +49,13 @@ export class RunbookRunner {
     return runId
   }
 
+  /** Runs still in flight. Restarting mid-run abandons it halfway across a fleet. */
+  activeCount(): number {
+    let live = 0
+    for (const state of this.runs.values()) if (!state.cancelled) live++
+    return live
+  }
+
   cancel(runId: string): void {
     const state = this.runs.get(runId)
     if (!state) return
