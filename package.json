@@ -21,7 +21,7 @@
     "package:win": "electron-vite build && electron-builder --win",
     "package:mac": "electron-vite build && electron-builder --mac",
     "release": "electron-vite build && electron-builder --publish always",
-    "package:mac:signed": "electron-vite build && CSC_NAME=\"Developer ID Application: Justyn Roberts (2H574B6N62)\" electron-builder --mac --publish never"
+    "package:mac:signed": "electron-vite build && CSC_NAME=\"Justyn Roberts (2H574B6N62)\" electron-builder --mac --publish never && node scripts/refresh-update-metadata.js dist"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.57.0",
