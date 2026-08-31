@@ -1,37 +1,37 @@
-<p align="center">
-  <img src="build/icon.png" alt="" width="120" height="120">
-</p>
+<img src="build/icon.png" alt="" width="76" height="76">
 
-<h1 align="center">Termite</h1>
+# Termite
 
-<p align="center">
-  A modern, <strong>AI-first SSH client</strong> for Windows and macOS.<br>
-  Terminal, file transfer, tunnels, multi-host runbooks, and a Claude-powered
-  copilot — in one fast desktop app.
-</p>
+A terminal application for macOS and Windows, with fleet management and built-in
+LLM connectivity. SSH sessions in tabs and split panes, SFTP, port forwarding,
+and a host vault with agent, key and bastion support. Run a step across forty
+machines and watch the exit codes come back. Wire up an LLM with your own API
+key, or leave it off.
 
-<p align="center">
-  <a href="https://justynroberts.github.io/termite/"><strong>Website</strong></a> ·
-  <a href="../../releases/latest"><strong>Download</strong></a> ·
-  MIT licensed ·
-  <a href="mailto:justyn@fintonlabs.com">justyn@fintonlabs.com</a>
-</p>
+Electron and xterm.js. MIT licensed. No account, no telemetry, no server in the
+middle.
+
+[Website](https://justynroberts.github.io/termite/) ·
+[Releases](../../releases) ·
+[Issues](../../issues)
 
 ## Install
 
-Grab the latest installer from **[Releases](../../releases)**:
+Builds are attached to each [release](../../releases). There is no package
+manager yet.
 
-- **Windows**: `Termite-Setup-<ver>.exe` (installer) or `Termite-Portable-<ver>.exe` (no install)
-- **macOS**: `Termite-<ver>-mac.dmg` (universal — Apple Silicon + Intel)
-
-Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → right-click → *Open* (first launch only).
+| Platform | File | Notes |
+|---|---|---|
+| macOS | `Termite-<ver>-mac.dmg` | Universal — Apple Silicon and Intel. Signed with a Developer ID and notarised, so it opens without a Gatekeeper prompt. |
+| Windows | `Termite-Setup-<ver>.exe` | x64, per-user install. Unsigned, so SmartScreen asks once: *More info → Run anyway*. |
+| Windows | `Termite-Portable-<ver>.exe` | No install. Copy it anywhere and run. |
 
 ## Features
 
 **Terminal**
 - Tabbed SSH terminals (xterm.js on the WebGL renderer, 256-color), Ctrl+Tab to switch,
   middle-click to close
-- **Powerline prompts and Nerd Font icons render out of the box** — the core Powerline
+- Powerline prompts and Nerd Font icons work without configuration — the core Powerline
   glyphs (``…) are drawn by the renderer itself in any font, and the official
   Symbols Nerd Font is bundled for the extended icon set (git branch, web, folders, …);
   a system-installed Nerd Font is used first when present
@@ -41,7 +41,7 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 - Focused pane gets an accent indicator; snippets and the AI copilot always target it
 - **Zen mode** (`Ctrl+Shift+Z`): fullscreen with every bit of chrome hidden — just your
   terminals edge to edge. Exit with the same shortcut or the faint ✕ pill top-right
-- Clipboard done right: `Ctrl+C` copies when text is selected (SIGINT otherwise),
+- Clipboard: `Ctrl+C` copies when text is selected and sends SIGINT when it is not,
   `Ctrl+V`/`Ctrl+Shift+V` paste, `Ctrl+Shift+C` copies, right-click copies selection or
   pastes, optional copy-on-select (PuTTY style), and visible Copy/Paste pane actions
 - **Authentication handoff assistant** detects OAuth/device-login links (including wrapped Claude
@@ -90,27 +90,27 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 **Tunnels**
 - Local, remote, and dynamic (SOCKS5) port forwarding with start/stop control
 
-**AI Copilot (Ctrl+K)** — bring your own Anthropic API key
-- Describe what you want in plain English → get the exact command, with **Run / Insert / Copy** buttons
-- "Explain last error" — the copilot sees your recent terminal output, so it explains *your* actual error
-- Explain output, summarize session, free-form sysadmin chat
-- Destructive commands are generated with guardrails; nothing runs without your click
+**LLM (Ctrl+K)** — optional, and it uses your own Anthropic API key
+- Describe what you want, get a command back with Run / Insert / Copy. Nothing executes until you click
+- "Explain last error" is given the recent scrollback of the focused pane, so it explains the error you actually hit
+- Explain output, summarise a session, or plain sysadmin chat
+- Destructive commands come back with guardrails attached
 
 **Snippets**
 - Save frequent commands, run them in the focused pane with one click
 
-**Runbooks — orchestrate across your fleet**
+**Fleet management — runbooks**
 - Multi-step, multi-host command orchestration: patch a fleet, roll a deploy, run health
   checks — each step targets one or more hosts, in parallel or rolling one-at-a-time
 - Fail-fast or continue-on-error per step, optional timeouts, per-step interpreter
   (login shell / bash / PowerShell for Windows hosts)
 - Live run view: step timeline, per-host status + exit codes, streaming collapsible
   output, cancel mid-run
-- **AI drafting**: describe the job in plain English and Claude writes the steps
-  (pre-checks → change → verification) for you to review and target
+- Drafting: describe the job and the LLM writes the steps (pre-checks, change,
+  verification) for you to review and target before anything runs
 
 **Appearance**
-- Windows 11 native look: **Mica / Acrylic** window materials, rounded corners, native
+- Windows 11: Mica / Acrylic window materials, rounded corners, native
   window-controls overlay; macOS vibrancy. Switchable (or fully solid) in Settings → Appearance
 - Theme-aware custom title bar
 - 10 terminal themes (Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, One Dark, Monokai,
@@ -121,33 +121,30 @@ Unsigned builds: Windows SmartScreen → *More info → Run anyway*; macOS → r
 
 ## Updates
 
-Termite checks GitHub Releases for a newer build in the background — eight seconds
-after launch, every couple of hours, and when you bring the window back to the
-front. It never checks while a runbook or a file transfer is running, and it never
-restarts without asking: the restart drops every live SSH session, so the dialog
-says how many are open before you agree to it. Turn the whole thing off in
-**Settings → Updates**, which also has a **Check for updates** button.
-
-What happens next depends on which build you are running:
+Termite checks GitHub Releases in the background — shortly after launch, every
+couple of hours, and when the window regains focus. It skips the check while a
+runbook or a file transfer is in flight, and it never restarts without asking:
+the restart drops every live SSH session, so the dialog says how many are open
+first. Off switch and a manual check are in **Settings → Updates**.
 
 | Build | Behaviour |
 |---|---|
-| **Windows installer** (`Termite-Setup-*.exe`) | Downloads in the background, then offers to restart and install |
-| **Windows portable** (`Termite-Portable-*.exe`) | Tells you a new version exists and opens the download — there is no installer to update through |
-| **macOS** (`.dmg`) | Tells you a new version exists and opens the download |
+| macOS `.dmg` | Downloads in the background, then offers to restart and install |
+| Windows `Termite-Setup-*.exe` | Downloads in the background, then offers to restart and install |
+| Windows `Termite-Portable-*.exe` | Reports the new version and opens the download — there is no installer to update through |
 
-macOS is download-only because the released builds are unsigned, and Squirrel.Mac
-will not let an app replace itself unless the new copy's signature satisfies the
-running one's designated requirement — an ad-hoc signature has no identity to
-satisfy it with. Adding a Developer ID to the release workflow (see
-[Code signing](#code-signing-optional-removes-os-warnings)) switches macOS to full
-background updates on its own; `src/main/updater.ts` detects the signature at
-startup and needs no change.
+The portable build is detected before the download rather than after it, so it
+never pulls 190 MB it cannot use.
 
-Everything the updater does is written to `updater.log` in the app's log folder
-(`~/Library/Logs/Termite` on macOS, `%APPDATA%\Termite\logs` on Windows) — an
-update that fails silently is the one failure mode worth being able to diagnose
-after the fact.
+macOS self-updates require a Developer ID signature: Squirrel.Mac will not let an
+app replace itself unless the new copy's signature satisfies the running one's
+designated requirement, and an ad-hoc signature has no identity to satisfy it
+with. `src/main/updater.ts` reads the running bundle's signature at startup and
+falls back to notify-and-download when it is not signed — so an unsigned local
+build behaves sensibly without any configuration.
+
+Updater activity is written to `updater.log` in the app's log folder
+(`~/Library/Logs/Termite`, or `%APPDATA%\Termite\logs`).
 
 ## Development
 
@@ -183,15 +180,37 @@ installers in parallel** and attaches them to a GitHub Release automatically. No
 certificates needed to get started (see below). You can also trigger a build manually from the
 Actions tab (`workflow_dispatch`) — artifacts appear on the run page.
 
-### Code signing (optional, removes OS warnings)
+### Code signing
 
-Unsigned builds work, but Windows SmartScreen shows "unknown publisher" (click *More info → Run
-anyway*) and macOS requires a one-time right-click → *Open*. To sign:
+macOS releases are signed and notarised locally:
 
-- **Windows**: set `CSC_LINK` / `CSC_KEY_PASSWORD` secrets (PFX cert) and remove nothing — electron-builder picks them up.
-- **macOS**: set `CSC_LINK` / `CSC_KEY_PASSWORD` (Developer ID cert), delete the
-  `CSC_IDENTITY_AUTO_DISCOVERY: 'false'` line in the workflow, and add notarization env
-  (`APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`).
+```bash
+npm run package:mac:signed
+```
+
+This needs a Developer ID Application certificate in the login keychain and
+notarytool credentials stored once:
+
+```bash
+xcrun notarytool store-credentials "notarytool" --apple-id <id> --team-id <team>
+```
+
+It signs the app, notarises and staples it, then signs, notarises and staples the
+disk image separately — the dmg carries its own ticket and inherits nothing from
+the app. Stapling rewrites the dmg after electron-builder has hashed it, so
+`scripts/refresh-update-metadata.js` regenerates `latest-mac.yml` from the
+finished bytes; publishing the original hash would fail verification on every
+update.
+
+Two things not to "fix": `CSC_NAME` holds the **bare** identity name, because
+electron-builder rejects the `Developer ID Application:` prefix while `codesign`
+requires it (`scripts/sign-dmg.js` adds it back). And the metadata refresh runs
+as a build step rather than an electron-builder hook, because the manifest does
+not exist yet when the last hook fires.
+
+CI builds are unsigned. Windows signing would need `CSC_LINK` /
+`CSC_KEY_PASSWORD` secrets (PFX cert); electron-builder picks them up
+automatically.
 
 ### App icon
 
@@ -207,4 +226,4 @@ Regenerate it after design tweaks with `npm run icon`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Copyright © 2026 Justyn Roberts <justyn@fintonlabs.com>. Enjoy! 🐜
+MIT — see [LICENSE](LICENSE). Copyright © 2026 Justyn Roberts <justyn@fintonlabs.com>.

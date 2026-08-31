@@ -54,25 +54,25 @@
   }
 
   /* ---------- hero terminal ---------- */
+  // A runbook step across a fleet, which is the thing an ordinary terminal
+  // cannot do. No captions, no narration — just what the screen would show.
   var SCRIPT = [
-    ['pr', '~ ', 'us', 'ssh web-01'],
-    ['cm', 'Last login: Sat Aug 29 09:14:02 2026 from 10.0.4.19'],
+    ['c', 'patch-openssl', 'd', '   3 steps · 6 hosts · rolling · fail-fast'],
     [''],
-    ['pr', 'web-01 ', 'us', 'systemctl restart nginx'],
-    ['wn', 'Job for nginx.service failed. See "systemctl status nginx".'],
+    ['d', 'step 1/3  pre-check         '],
+    ['g', '  web-01 ok 0   web-02 ok 0   web-03 ok 0'],
+    ['g', '  db-01  ok 0   db-02  ok 0   edge-eu ok 0'],
     [''],
-    ['cm', '── Ctrl+K ─ explain last error ───────'],
-    ['ai', '  nginx failed its config test: duplicate listen 443'],
-    ['ai', '  in sites-enabled/api.conf and sites-enabled/web.conf.'],
-    ['ai', '  Suggested:'],
-    ['ok', '  nginx -t && sudo rm /etc/nginx/sites-enabled/api.conf'],
-    ['cm', '  [ Run ]  [ Insert ]  [ Copy ]'],
-    ['cm', '───────────────────────────────────────'],
+    ['d', 'step 2/3  apt install --only-upgrade openssl'],
+    ['g', '  web-01 ok 0   web-02 ok 0   web-03 ok 0'],
+    ['g', '  db-01  ok 0'],
+    ['w', '  db-02  exit 100  E: Could not get lock /var/lib/dpkg/lock'],
+    ['d', '  edge-eu skipped (fail-fast)'],
     [''],
-    ['pr', 'web-01 ', 'us', 'nginx -t'],
-    ['ok', 'configuration file /etc/nginx/nginx.conf test is successful'],
+    ['d', 'step 3/3  verify            not run'],
     [''],
-    ['pr', 'web-01 ', 'us', '']
+    ['w', 'run stopped after step 2 — 1 host failed'],
+    ['d', '']
   ];
 
   var body = document.getElementById('term-body');
@@ -83,7 +83,7 @@
 
   function renderLine(parts) {
     var line = document.createElement('span');
-    line.className = 'tline';
+    line.className = 'tl';
     var html = '';
     for (var i = 0; i < parts.length; i += 2) {
       var cls = parts[i];
@@ -119,8 +119,8 @@
       // force style flush so the animation restarts cleanly
       void line.offsetWidth;
       line.classList.add('in');
-      var pause = parts[1] === undefined || parts[1] === '' ? 90 : 190;
-      if (parts[0] === 'ai' || parts[0] === 'ok') pause = 240;
+      var pause = parts[1] === undefined || parts[1] === '' ? 70 : 150;
+      if (parts[0] === 'g' || parts[0] === 'w') pause = 190;
       i++;
       setTimeout(step, pause);
     })();

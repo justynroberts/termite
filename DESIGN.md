@@ -1,64 +1,77 @@
 # DESIGN.md — Termite site
 
-House-style record for the GitHub Pages site in `docs/`. Written before the CSS.
-A later session should read this before changing the look, and should pick
-differently again for the *next* project.
+House-style record for the GitHub Pages site in `docs/`. A later session should
+read this before changing the look, and should pick differently again for the
+*next* project.
 
-## Archetype: **Poster**
+## Archetype: **Terminal**
 
-One oversized statement per screen, minimal chrome, full-bleed colour fields.
+Mono-forward, tight grid, dense rows, hard 0–2px radii, near-monochrome.
 
-Recent siblings in `~/work/` used: Kiosk (`24keypad`, `3d-servicemap`),
-Console/telemetry (`aidetect`, `portfolio`, `tessera`), Editorial (`dontforget`,
-`newsfin`), Soft product (`emberline`, `finburn`, `mpcee`, `steprail`),
-Brutalist (`finscreen`), Blueprint (`finvector`). Poster and Gallery were the
-two left unused; Gallery needs product imagery this repo does not have (the only
-raster asset is a 512px icon), so Poster it is.
+This replaces a **Poster** pass — full-bleed colour fields, one oversized
+statement per screen ("Every box. One window. Ask it anything."). It was
+rejected on the only grounds that matter: it read as marketing. The audience for
+a terminal emulator is people who will judge it on what it does, and a page that
+withholds facts to make room for a slogan is the wrong shape for them.
 
-It also earns the pick on content grounds. This is a *landing page for a
-download*, not an instrument panel — the job is one claim per scroll and a
-button. The obvious move for an SSH client is the Terminal archetype: scanlines,
-mono everything, hard edges. That would have been the fourth hard-edged
-technical register in the fleet and would make the product look like every
-other terminal emulator's site. The page is set in a display face at poster
-scale, and the only mono on the page is inside the one element that genuinely
-is a terminal.
+Terminal was the archetype I passed over the first time as too obvious for an
+SSH client. That reasoning was about avoiding a cliché rather than about serving
+the reader, and it was wrong. Recent siblings in `~/work/` used Kiosk
+(`24keypad`, `3d-servicemap`), Console/telemetry (`aidetect`, `portfolio`,
+`tessera`), Editorial (`dontforget`, `newsfin`), Soft product (`emberline`,
+`finburn`), Brutalist (`finscreen`) and Blueprint (`finvector`) — Terminal is
+unused across all of them.
+
+The positioning changed with it. Termite is a **multi-platform terminal
+application with fleet management and built-in LLM connectivity, bring your own
+key** — not an "AI-first SSH client", which oversold the AI and undersold both
+the terminal and the fleet work.
+
+Three pillars, given equal weight in that order: **terminal**, **fleet**,
+**LLM**. Running one step across forty hosts is the capability an ordinary
+terminal does not have, so it is stated up front rather than filed under
+"runbooks" two thirds of the way down.
 
 ## Axis picks
 
 | Axis | Pick | Why it differs |
 |---|---|---|
-| **Layout** | Full-bleed stacked sections, each its own colour field, content on an **asymmetric 12-column grid** that alternates weight left/right down the page | No rail, no card grid, no bento. Every recent sibling docks a rail or tiles cards; here each section is a whole screen with one idea in it. |
-| **Type scale** | Dramatic — **1.6 ratio**, hero at `clamp(3.4rem, 10vw, 9rem)`, section statements at `clamp(2.2rem, 5.5vw, 4.4rem)` | Poster copy is read as an image before it is read as text. Instrument-panel siblings sat at 1.2–1.25. |
-| **Surface** | **Flat fills and hairline rules.** No cards, no elevation, no blur — except the one floating download bar and the info dialog | Directly opposed to `finburn`/`emberline` translucency and `finscreen` offset shadows. |
-| **Radius** | Mixed by role — **0px** on panels, rules and the terminal frame; **pill** on buttons, chips and the theme toggle | The hard/soft contrast is the whole surface language: structure is square, anything you press is round. |
-| **Accent** | **Duotone, derived not invented** — mint `#10b981` / `#34d399` is the app's own `--accent`; violet `#7b6bb5` is read off the ant in `build/icon.png`. Mint = the shell, the command, the go. Violet = the AI, the copilot, the thinking. | Neither hue is chosen for taste — both already exist in the product. No sibling used a green/violet duotone; `finburn` was ember/cyan, `3d-servicemap` per-category. |
-| **Motion signature** | **Wipe-reveal** — a left-to-right `clip-path` sweep, 520ms, `cubic-bezier(.16,1,.3,1)`, staggered 60ms across siblings. Headlines, rules and images all arrive by being painted in from the left | The gesture a terminal makes when it prints a line. Distinct from rise-and-fade (`newsfin`), press-depress (`24keypad`), scale-in-bloom (`3d-servicemap`), draw-in stroke (`finvector`), snap-slide (`finscreen`), rail-slide (`tessera`). |
-| **Ground texture** | Plain fields with a **very low-opacity grain** overlay, plus one slow conic wash confined to the hero background layer | Grain keeps large flat colour fields from banding. The wash is 40s, ambient, and never touches a control. |
+| **Layout** | Single centred column, 880px measure, everything left-aligned on one rule | The poster used full-bleed alternating fields. A tool page is read top to bottom like a man page; one column means no decision about where to look. |
+| **Type scale** | **Near-flat, 1.2 ratio.** Largest text on the page is 1.9rem | Directly opposed to the poster's 1.6 ratio and 6.4rem hero. Nothing shouts, so the specifics carry the page. |
+| **Surface** | Flat fills, hairline rules, no cards, no elevation, no shadows anywhere except the one dialog | Same restraint as the poster pass, kept because it was not the problem. |
+| **Radius** | **0px** on every structural element; 2px on inputs and buttons | Hard edges. The poster's pill buttons were the single most product-marketing thing on it. |
+| **Accent** | **Near-monochrome with one signal colour** — mint `#0f9d6b` / `#34d399`, the app's own `--accent`. The violet from the icon is dropped | The poster was duotone with violet reserved for "the AI"; assigning a colour to the LLM overstated its place in the app. Colour now marks links, prompts and status, nothing else. |
+| **Type pairing** | **Mono-forward**: JetBrains Mono carries body, navigation, tables and labels. Bricolage Grotesque is kept for headings only | Inverts the poster, which was Bricolage throughout with mono only inside the terminal. JetBrains Mono is what the app ships as its default terminal font. |
+| **Motion signature** | **Fade-rise** — 10px, 240ms, no stagger beyond 40ms | Replaces the poster's 520ms left-to-right wipe, which was theatrical. Motion here should be almost unnoticed. |
+| **Ground texture** | Faint horizontal scanline at 3px, plus grain. Background layer only | The one texture that belongs to this archetype, at an intensity you have to look for. |
 
-## Type
+## Copy rules
 
-- Display + body: **Bricolage Grotesque**, `opsz 12..96`, `wdth 75..100`, `wght 300..800`.
-  Hierarchy comes from the variable axes — the hero narrows to `wdth 82` at
-  `wght 750`, body sits at `wdth 100 / wght 400`. No second sans.
-- Mono: **JetBrains Mono** — chosen because Termite bundles it as a terminal font,
-  so the site's terminal renders in a face the app actually ships.
+Written down because tone was the actual defect, not layout:
+
+- No superlatives, no "just works", no "done right", no exclamation marks.
+- Lead with what a thing *is*, then what it does. Never with how it feels.
+- Prefer a number, a filename or a flag to an adjective. `ed25519`, `SOCKS5`,
+  `xterm.js WebGL`, `Ctrl+Shift+E` — these are the selling points to this reader.
+- Say plainly where data goes. "Your key is sent to Anthropic and nowhere else"
+  is worth more than any claim about privacy.
+- No emoji in prose.
 
 ## Theming
 
 Three states via `data-theme` on `<html>`: explicit light, explicit dark, system
-default. Every token defined on bare `:root`; the dark blocks redefine only what
-changes. Boot script in `<head>` applies the stored value before first paint.
+default. Every token on bare `:root`; the dark blocks redefine only what changes.
+A blocking script in `<head>` applies the stored value before first paint.
 
-Light is the harder one here and got the attention: the mint drops to `#047857`
-against paper so body-size text on the light ground clears WCAG AA, and the
-violet darkens to `#5b4b93`.
+Dark is the default expectation for this archetype, so light got the scrutiny:
+mint drops to `#0f6f4e` on paper for body-size text to clear WCAG AA.
 
 ## The five non-negotiables
 
 - Light + dark + system, real toggle, no flash — `docs/index.html` head script
-- Animated CSS — wipe-reveal on scroll via `IntersectionObserver`, hover/press on
-  every control, `prefers-reduced-motion` guard in `docs/styles.css`
-- Bricolage Grotesque as the display face
-- Poster archetype, unused in the fleet, different skeleton from the last project
-- "Made by FintonLabs" info button — bottom-right, `<dialog>`, Escape/backdrop/close
+- Animated CSS — fade-rise on scroll, hover/focus transitions, blinking caret;
+  `prefers-reduced-motion` guard in `docs/styles.css`
+- Bricolage Grotesque as the display face (headings)
+- Terminal archetype, unused in the fleet, and a different skeleton from the
+  Poster pass it replaces
+- "Made by FintonLabs" info button — footer, `<dialog>`, Escape/backdrop/close
