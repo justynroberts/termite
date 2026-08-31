@@ -460,6 +460,19 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  transition: width 0.18s ease, opacity 0.14s ease;
+}
+/* Collapsed rather than unmounted, so a search term or scroll position is still
+   there when the panel comes back. */
+/* Selected but collapsed: lit, without the full active treatment, so the rail
+   still says which panel Cmd+B would reopen. */
+.activity-btn.active.collapsed { background: transparent; }
+
+.sidebar.collapsed {
+  width: 0;
+  opacity: 0;
+  border-right-color: transparent;
+  pointer-events: none;
 }
 .sidebar-header {
   padding: 12px 14px 8px;
@@ -909,3 +922,12 @@ textarea { font-family: var(--font-mono); resize: vertical; }
 code.inline { font-family: var(--font-mono); background: var(--bg-0); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; user-select: text; }
 .mono { font-family: var(--font-mono); }
 .select-text { user-select: text; }
+
+/* Respect a reduced-motion preference across the whole app. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

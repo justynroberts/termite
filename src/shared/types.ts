@@ -75,6 +75,8 @@ export interface AppSettings {
   copyOnSelect: boolean
   /** Check GitHub Releases for a newer build in the background */
   autoUpdate: boolean
+  /** Left panel collapsed, giving the width back to the terminal */
+  sidebarHidden: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -90,7 +92,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   confirmOnClose: true,
   windowEffect: 'mica',
   copyOnSelect: false,
-  autoUpdate: true
+  autoUpdate: true,
+  sidebarHidden: false
 }
 
 /** Outcome of an explicit "check for updates" from Settings. */

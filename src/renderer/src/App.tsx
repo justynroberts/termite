@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import { tabStatus, useApp, type View } from './state'
 import HostsPanel from './components/HostsPanel'
 import KeysPanel from './components/KeysPanel'
@@ -31,7 +31,7 @@ const NAV: { view: View; icon: JSX.Element; title: string }[] = [
 export default function App(): JSX.Element {
   const {
     view, setView, tabs, activeTabId, setActiveTabId, closeTab, aiOpen, setAiOpen,
-    transfers, toasts, toast, settings, activeTab,
+    transfers, toasts, toast, settings, saveSettings, activeTab,
     splitPane, closePane, duplicateTerminal, broadcastTabs, toggleBroadcast, activePaneId
   } = useApp()
 
@@ -42,6 +42,24 @@ export default function App(): JSX.Element {
   useEffect(() => {
     window.termite.windowFx.capabilities().then((c) => setMaterialSupported(c.material))
   }, [])
+
+  // The panel's collapsed state lives in settings so it survives a restart, the
+  // same way open tabs and split layouts do — reopening to a layout you did not
+  // choose is the thing that makes a collapsible panel annoying.
+  const sidebarHidden = settings.sidebarHidden
+  // Read through a ref, not the render closure. The global keydown listener is
+  // registered in an effect that does not depend on `settings`, so a captured
+  // copy goes stale the moment anything is saved: the shortcut then toggles
+  // against a value frozen at mount — it collapsed the panel and would never
+  // reopen it — and writing `{...staleSettings}` would quietly revert every
+  // other preference changed since.
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+  const setSidebarHidden = (hidden: boolean): void => {
+    void saveSettings({ ...settingsRef.current, sidebarHidden: hidden })
+  }
+  const toggleSidebar = (): void => setSidebarHidden(!settingsRef.current.sidebarHidden)
+  const modLabel = window.termite.platform === 'darwin' ? 'Cmd' : 'Ctrl'
 
   const toggleZen = (): void => {
     setZen((z) => {
@@ -79,6 +97,10 @@ export default function App(): JSX.Element {
       if (mod && e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         toggleZen()
+      }
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        toggleSidebar()
       }
       if (mod && e.shiftKey && activeTab?.kind === 'terminal') {
         const k = e.key.toLowerCase()
@@ -147,9 +169,16 @@ export default function App(): JSX.Element {
         {NAV.map((n) => (
           <button
             key={n.view}
-            className={`activity-btn ${view === n.view ? 'active' : ''}`}
-            title={n.title}
-            onClick={() => setView(n.view)}
+            // Stays lit while the panel is collapsed: the icon shows which panel
+            // is selected, not whether it happens to be open. Losing every
+            // highlight left nothing indicating what Cmd+B would bring back.
+            className={`activity-btn ${view === n.view ? 'active' : ''} ${view === n.view && sidebarHidden ? 'collapsed' : ''}`}
+            title={view === n.view && !sidebarHidden ? `Hide ${n.title.toLowerCase()} (${modLabel}+B)` : n.title}
+            onClick={() => {
+              if (view === n.view) return toggleSidebar()
+              setView(n.view)
+              if (sidebarHidden) setSidebarHidden(false)
+            }}
           >
             {n.icon}
           </button>
@@ -165,7 +194,7 @@ export default function App(): JSX.Element {
       </div>
 
       {view !== 'settings' && view !== 'audit' && (
-        <div className="sidebar">
+        <div className={`sidebar ${sidebarHidden ? 'collapsed' : ''}`} aria-hidden={sidebarHidden}>
           {view === 'hosts' && <HostsPanel />}
           {view === 'keys' && <KeysPanel />}
           {view === 'snippets' && <SnippetsPanel />}
@@ -265,6 +294,7 @@ export default function App(): JSX.Element {
                   <div>Double-click a host to open a terminal</div>
                   <div className="shortcuts">
                     <div><span>AI Copilot</span><kbd>Ctrl K</kbd></div>
+                    <div><span>Hide side panel</span><kbd>Ctrl B</kbd></div>
                     <div><span>Zen mode</span><kbd>Ctrl Shift Z</kbd></div>
                     <div><span>Split right</span><kbd>Ctrl Shift E</kbd></div>
                     <div><span>Split down</span><kbd>Ctrl Shift O</kbd></div>

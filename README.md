@@ -59,6 +59,7 @@ manager yet.
 | Action | Shortcut |
 |---|---|
 | AI Copilot | `Ctrl/Cmd + K` |
+| Hide side panel | `Ctrl/Cmd + B` |
 | Zen mode (fullscreen, chrome hidden) | `Ctrl/Cmd + Shift + Z` |
 | Split pane right | `Ctrl/Cmd + Shift + E` |
 | Split pane down | `Ctrl/Cmd + Shift + O` |
