@@ -208,9 +208,14 @@ requires it (`scripts/sign-dmg.js` adds it back). And the metadata refresh runs
 as a build step rather than an electron-builder hook, because the manifest does
 not exist yet when the last hook fires.
 
-CI builds are unsigned. Windows signing would need `CSC_LINK` /
-`CSC_KEY_PASSWORD` secrets (PFX cert); electron-builder picks them up
-automatically.
+CI builds are unsigned, and macOS signing stays local by design: the certificate
+and the notarytool profile live on one machine, a GitHub runner has neither, and
+a tag-triggered workflow would race the local build and publish ad-hoc images
+over it. Creating a release creates the tag, which starts that workflow — cancel
+the run, or it replaces the signed artifacts.
+
+Windows signing would need `CSC_LINK` / `CSC_KEY_PASSWORD` secrets (PFX cert);
+electron-builder picks those up automatically.
 
 ### App icon
 
