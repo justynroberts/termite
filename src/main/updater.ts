@@ -62,6 +62,14 @@ const MIN_GAP = 20 * 60 * 1000
  * update broken.
  */
 const INSTALL_GRACE = 25_000
+/**
+ * A 190MB download over a link that hiccups will fail sometimes — observed in
+ * the wild at 57%, when GitHub's CDN closed the connection after stalling for
+ * nineteen minutes. One failure must not mean waiting for the next scheduled
+ * check, so the download is retried before giving up.
+ */
+const DOWNLOAD_RETRIES = 3
+const RETRY_BACKOFF = [30_000, 120_000, 300_000]
 
 /**
  * Whether this copy can replace itself, and why not when it can't.
@@ -123,6 +131,10 @@ export interface UpdateDeps {
 
 let deps: UpdateDeps | null = null
 let busy = false
+/** The version currently being downloaded, so an error can be attributed. */
+let downloading: string | null = null
+let downloadAttempts = 0
+let gaveUpOn: string | null = null
 let lastCheck = 0
 let blockedBy: string | null = null
 
@@ -245,6 +257,31 @@ async function offerRestart(version: string): Promise<void> {
   }, INSTALL_GRACE)
 }
 
+/**
+ * Shown only after the retries are exhausted. The point is that the user ends up
+ * on the new version either way, so it leads with the download rather than an
+ * explanation of what went wrong.
+ */
+async function tellDownloadFailed(version: string): Promise<void> {
+  const window = surface()
+  if (!window || busy) return
+  busy = true
+  const result = await dialog.showMessageBox(window, {
+    type: 'warning',
+    message: `Could not download Termite ${version}`,
+    detail:
+      `The download was interrupted and did not recover after several attempts. ` +
+      `You are still running ${app.getVersion()}.\n\nDownloading it from the ` +
+      `releases page works, and takes about a minute.`,
+    buttons: ['Download it manually', 'Show me the log', 'Not now'],
+    defaultId: 0,
+    cancelId: 2
+  })
+  busy = false
+  if (result.response === 0) void shell.openExternal(`${RELEASES}/latest`)
+  else if (result.response === 1) shell.showItemInFolder(logPath)
+}
+
 export function setupUpdates(d: UpdateDeps): void {
   // A tree running from source has no version to compare against a release, and
   // would offer to "update" it to the last published installer.
@@ -266,16 +303,59 @@ export function setupUpdates(d: UpdateDeps): void {
 
   autoUpdater.on('update-available', (info) => {
     note(`update available: ${info.version}`)
-    if (blockedBy) void offerManualUpdate(info.version, blockedBy)
+    if (blockedBy) {
+      void offerManualUpdate(info.version, blockedBy)
+      return
+    }
+    // autoDownload is on, so electron-updater is already fetching it.
+    if (info.version !== downloading) {
+      downloading = info.version
+      downloadAttempts = 0
+    }
   })
   autoUpdater.on('update-not-available', () => note('no update available'))
   autoUpdater.on('download-progress', (p) => note(`downloading ${Math.round(p.percent)}%`))
-  autoUpdater.on('update-downloaded', (info) => void offerRestart(info.version))
+  autoUpdater.on('update-downloaded', (info) => {
+    downloading = null
+    downloadAttempts = 0
+    void offerRestart(info.version)
+  })
 
   // Failures are silent on purpose: being offline, or behind a proxy that blocks
   // GitHub, is not something to interrupt someone about. It is logged so it can
   // still be diagnosed.
-  autoUpdater.on('error', (error) => note(`check failed: ${error.message}`))
+  /**
+   * A failed *check* is not worth interrupting anyone about — being offline, or
+   * behind a proxy that blocks GitHub, is not news. A failed *download* is
+   * different: the update was found, it was wanted, and it got part way. Retry
+   * it, and if it keeps failing say so rather than leaving the user on an old
+   * version wondering why nothing happened.
+   */
+  autoUpdater.on('error', (error) => {
+    const version = downloading
+    if (!version) {
+      note(`check failed: ${error.message}`)
+      return
+    }
+    downloadAttempts++
+    note(`download of ${version} failed (attempt ${downloadAttempts}): ${error.message}`)
+
+    if (downloadAttempts <= DOWNLOAD_RETRIES) {
+      const wait = RETRY_BACKOFF[downloadAttempts - 1] ?? 300_000
+      note(`retrying download in ${Math.round(wait / 1000)}s`)
+      setTimeout(() => {
+        if (downloading !== version) return
+        autoUpdater.downloadUpdate().catch(() => undefined)
+      }, wait)
+      return
+    }
+
+    downloading = null
+    if (gaveUpOn === version) return
+    gaveUpOn = version
+    note(`giving up on downloading ${version}; offering the manual route`)
+    void tellDownloadFailed(version)
+  })
 
   const check = (): void => {
     if (!deps?.isEnabled()) return
