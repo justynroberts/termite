@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { SearchAddon } from '@xterm/addon-search'
+import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
@@ -87,6 +88,23 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
+
+    // The GPU renderer. @xterm/addon-webgl was already a dependency and the docs
+    // claimed it was in use, but nothing ever loaded it, so every session was
+    // running on the DOM renderer — a node per cell, repainted on each echoed
+    // character. It must be attached after open(), and it can lose its context
+    // (GPU reset, driver crash, too many live contexts across split panes), in
+    // which case the addon is disposed and xterm falls back to the DOM renderer
+    // on its own rather than freezing on a dead canvas.
+    const attachRenderer = (): void => {
+      try {
+        const webgl = new WebglAddon()
+        webgl.onContextLoss(() => webgl.dispose())
+        term.loadAddon(webgl)
+      } catch {
+        // No WebGL available; the DOM renderer still works.
+      }
+    }
     // Custom link provider that sees URLs across wrapped rows — soft-wrapped OR
     // hard-wrapped (CLIs like `claude login` print long OAuth URLs with real
     // newlines). Contiguous full-width rows are treated as one paragraph, so the
@@ -141,6 +159,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     const search = new SearchAddon()
     term.loadAddon(search)
     term.open(containerRef.current)
+    attachRenderer()
     fit.fit()
     termRef.current = term
     fitRef.current = fit
