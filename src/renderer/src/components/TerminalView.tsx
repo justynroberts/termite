@@ -253,28 +253,36 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           return
         }
         updatePane(tab.id, pane.paneId, { sessionId, status: 'connected' })
-        unsubData = window.termite.ssh.onData(sessionId, (data) => {
-          term.write(data, () => {
-            // Read rendered rows rather than raw chunks: xterm has already handled
-            // cursor movement and TUI repainting, so this reconstructs exactly what
-            // the user sees—including hard-wrapped OAuth URLs.
-            const buf = term.buffer.active
-            const first = Math.max(0, buf.length - 80)
-            const paragraphs: string[] = []
-            let paragraph = ''
-            for (let row = first; row < buf.length; row++) {
-              const line = buf.getLine(row)?.translateToString(true) ?? ''
-              paragraph += line
-              if (line.length < term.cols) {
-                paragraphs.push(paragraph)
-                paragraph = ''
-              }
+        // Read rendered rows rather than raw chunks: xterm has already handled
+        // cursor movement and TUI repainting, so this reconstructs exactly what
+        // the user sees—including hard-wrapped OAuth URLs.
+        const scanForAuthUrl = (): void => {
+          const buf = term.buffer.active
+          const first = Math.max(0, buf.length - 80)
+          const paragraphs: string[] = []
+          let paragraph = ''
+          for (let row = first; row < buf.length; row++) {
+            const line = buf.getLine(row)?.translateToString(true) ?? ''
+            paragraph += line
+            if (line.length < term.cols) {
+              paragraphs.push(paragraph)
+              paragraph = ''
             }
-            if (paragraph) paragraphs.push(paragraph)
-            const urls = paragraphs.flatMap((text) => text.match(/https?:\/\/[^\s"'`<>]+/g) ?? [])
-            const candidate = [...urls].reverse().find((url) => /oauth|authorize|login|device/i.test(url))
-            if (candidate) setAuthUrl(candidate.replace(/[),.;]+$/, ''))
-          })
+          }
+          if (paragraph) paragraphs.push(paragraph)
+          const urls = paragraphs.flatMap((text) => text.match(/https?:\/\/[^\s"'`<>]+/g) ?? [])
+          const candidate = [...urls].reverse().find((url) => /oauth|authorize|login|device/i.test(url))
+          if (candidate) setAuthUrl(candidate.replace(/[),.;]+$/, ''))
+        }
+
+        // Deferred rather than run per chunk. Rebuilding 80 rows of the buffer on
+        // every echoed keystroke is work nobody asked for; a login URL is still
+        // caught the moment output settles.
+        let scanTimer: ReturnType<typeof setTimeout> | undefined
+        unsubData = window.termite.ssh.onData(sessionId, (data) => {
+          term.write(data)
+          if (scanTimer) clearTimeout(scanTimer)
+          scanTimer = setTimeout(scanForAuthUrl, 150)
         })
         void window.termite.ssh.subscribe(sessionId).then((initialOutput) => {
           if (initialOutput) term.write(initialOutput)

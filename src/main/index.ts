@@ -181,4 +181,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('before-quit', () => ssh?.shutdown())
+app.on('before-quit', () => {
+  ssh?.shutdown()
+  // transcripts are buffered now, so the tail would be lost on a hard exit
+  activity?.flush()
+})

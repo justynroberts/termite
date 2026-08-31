@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { appendFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync, type WriteStream } from 'fs'
 import { join } from 'path'
 import { hostname, userInfo } from 'os'
 import { v4 as uuid } from 'uuid'
@@ -14,6 +14,7 @@ export class ActivityStore {
   private sessions: SessionLogSummary[]
   private readonly actor = `${userInfo().username}@${hostname()}`
   private lastAuditPrune = 0
+  private readonly streams = new Map<string, WriteStream>()
 
   constructor() {
     mkdirSync(this.logDir, { recursive: true })
@@ -27,13 +28,43 @@ export class ActivityStore {
     this.audit('session.connect', hostLabel, undefined, 'ok')
   }
 
+  /**
+   * Append to a session's transcript.
+   *
+   * Called for every chunk the remote sends, which for an interactive session
+   * means once per echoed keystroke. It used to be `appendFileSync`, so each
+   * character cost an open/write/close in the main process — on the same thread
+   * that has to forward the byte to the renderer. Writes now go through a
+   * per-session stream that buffers and flushes on its own.
+   */
   append(id: string, text: string): void {
-    appendFileSync(join(this.logDir, `${id}.log`), text, 'utf8')
+    let stream = this.streams.get(id)
+    if (!stream) {
+      stream = createWriteStream(join(this.logDir, `${id}.log`), { flags: 'a' })
+      // A transcript that cannot be written is not worth taking the app down for.
+      stream.on('error', () => this.streams.delete(id))
+      this.streams.set(id, stream)
+    }
+    stream.write(text)
     const item = this.sessions.find((entry) => entry.id === id)
     if (item) item.bytes += Buffer.byteLength(text)
   }
 
+  /** Close a session's transcript stream, flushing whatever is still buffered. */
+  private closeStream(id: string): void {
+    const stream = this.streams.get(id)
+    if (!stream) return
+    this.streams.delete(id)
+    stream.end()
+  }
+
+  /** Flush every open transcript — called before the app quits. */
+  flush(): void {
+    for (const id of [...this.streams.keys()]) this.closeStream(id)
+  }
+
   end(id: string, outcome: AuditEvent['outcome'] = 'ok'): void {
+    this.closeStream(id)
     const item = this.sessions.find((entry) => entry.id === id)
     if (!item || item.endedAt) return
     item.endedAt = Date.now()

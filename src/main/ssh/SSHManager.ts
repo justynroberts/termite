@@ -14,6 +14,8 @@ export interface ShellSession {
   channel: ClientChannel
   /** ring buffer of recent output for AI context */
   recentOutput: string[]
+  /** running total of recentOutput lengths, so trimming is not O(n) per chunk */
+  recentBytes: number
   /** Output received before the renderer subscribes to this new session. */
   pendingOutput: string[]
   subscribed: boolean
@@ -102,11 +104,38 @@ export class SSHManager extends EventEmitter {
     return false
   }
 
+  /**
+   * Turn off Nagle's algorithm on the SSH socket.
+   *
+   * A keystroke is a packet of a few bytes. Nagle holds a small write back until
+   * the previous packet has been acknowledged, and the far end's delayed-ACK
+   * timer then sits on that acknowledgement — so an interactive session pays tens
+   * of milliseconds per character while bulk transfers, whose packets are already
+   * full, notice nothing. It is the classic reason a terminal "feels slow to type
+   * in" but copies files at full speed.
+   *
+   * OpenSSH sets TCP_NODELAY on interactive sessions for this reason. ssh2
+   * exposes `setNoDelay` but never calls it, so without this every Termite
+   * session was running with Nagle on.
+   *
+   * A client reached through a jump host is tunnelled over a channel rather than
+   * a socket; ssh2 ignores the call there, and the jump host's own client picks
+   * it up when it connects.
+   */
+  private setInteractive(client: Client): void {
+    try {
+      client.setNoDelay(true)
+    } catch {
+      // Older ssh2, or a transport with no underlying socket.
+    }
+  }
+
   /** Connect a Client, chaining through the jump host if configured. */
   private connectClient(host: Host, depth = 0): Promise<Client> {
     if (depth > 3) return Promise.reject(new Error('Jump host chain too deep'))
 
     return new Promise((resolve, reject) => {
+      const interactive = (c: Client): void => this.setInteractive(c)
       const attempt = async (): Promise<void> => {
         const cfg = await this.buildConfig(host)
         const client = new Client()
@@ -133,6 +162,7 @@ export class SSHManager extends EventEmitter {
             client
               .on('ready', () => {
                 client.removeListener('error', onError)
+                interactive(client)
                 client.on('close', () => jumpClient.end())
                 resolve(client)
               })
@@ -143,6 +173,7 @@ export class SSHManager extends EventEmitter {
           client
             .on('ready', () => {
               client.removeListener('error', onError)
+              interactive(client)
               resolve(client)
             })
             .on('error', onError)
@@ -179,7 +210,7 @@ export class SSHManager extends EventEmitter {
         )
       })
 
-      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [], pendingOutput: [], subscribed: false }
+      const session: ShellSession = { sessionId, hostId, client, channel, recentOutput: [], recentBytes: 0, pendingOutput: [], subscribed: false }
       this.shells.set(sessionId, session)
       this.store.touchHost(hostId)
       this.activity?.start(sessionId, hostId, host.label)
@@ -188,10 +219,14 @@ export class SSHManager extends EventEmitter {
         const text = data.toString('utf8')
         if (!session.subscribed) session.pendingOutput.push(text)
         this.activity?.append(sessionId, text)
+        // Keep roughly the last 64KB for AI context. The length is carried as a
+        // running total: summing the array on every chunk re-walked tens of
+        // thousands of entries per keystroke, since an echoed character arrives
+        // as its own one-character chunk.
         session.recentOutput.push(text)
-        // keep roughly the last 64KB for AI context
-        while (session.recentOutput.reduce((n, s) => n + s.length, 0) > 65536) {
-          session.recentOutput.shift()
+        session.recentBytes += text.length
+        while (session.recentBytes > 65536) {
+          session.recentBytes -= session.recentOutput.shift()?.length ?? 0
         }
         if (session.subscribed) this.emit('session:data', sessionId, data)
       })
