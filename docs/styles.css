@@ -185,7 +185,8 @@ h1 {
   letter-spacing: -.015em;
   color: var(--text-0);
   margin: 0 0 .9rem;
-  max-width: 30ch;
+  max-width: 40ch;
+  text-wrap: balance;
 }
 .intro p { margin: 0 0 1rem; max-width: 74ch; }
 .intro p.lead { color: var(--text-1); }

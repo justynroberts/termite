@@ -2,14 +2,14 @@
 
 # Termite
 
-A terminal application for macOS and Windows, with fleet management and built-in
-LLM connectivity. SSH sessions in tabs and split panes, SFTP, port forwarding,
-and a host vault with agent, key and bastion support. Run a step across forty
-machines and watch the exit codes come back. Wire up an LLM with your own API
-key, or leave it off.
+**A terminal client that doesn’t assume you only have one server.**
 
-Electron and xterm.js. MIT licensed. No account, no telemetry, no server in the
-middle.
+SSH sessions in tabs and split panes, SFTP, port forwarding, and a host vault
+with agent, key and bastion support. Run a step across forty machines and watch
+the exit codes come back. Wire up an LLM with your own API key, or leave it off.
+
+Electron and xterm.js, on macOS and Windows. MIT licensed. No account, no
+telemetry, no server in the middle.
 
 [Website](https://justynroberts.github.io/termite/) ·
 [Releases](../../releases) ·
