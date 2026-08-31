@@ -19,21 +19,44 @@
 // or by exporting APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID.
 
 const { notarize } = require('@electron/notarize')
-const { execFileSync } = require('node:child_process')
+const { execFileSync, spawnSync } = require('node:child_process')
 const { join } = require('node:path')
 
 const KEYCHAIN_PROFILE = process.env.NOTARYTOOL_PROFILE ?? 'notarytool'
 
-/** True when `notarytool` already has a stored credential profile. */
-function hasKeychainProfile() {
-  try {
-    execFileSync('xcrun', ['notarytool', 'history', '--keychain-profile', KEYCHAIN_PROFILE], {
-      stdio: 'ignore'
-    })
-    return true
-  } catch {
-    return false
+/**
+ * Why notarisation is unavailable, or null when it is ready.
+ *
+ * Distinguishes "no credentials configured" — which is CI, and fine to skip —
+ * from "credentials exist but Apple refused", which is not. The 403 for an
+ * expired Program License Agreement is the common one: it is about the account,
+ * never about the build, and only the Account Holder can clear it by accepting
+ * the new agreement at developer.apple.com/account.
+ */
+function notarizationBlockedBy() {
+  const result = spawnSync('xcrun', ['notarytool', 'history', '--keychain-profile', KEYCHAIN_PROFILE], {
+    encoding: 'utf8',
+    timeout: 60000
+  })
+  if (result.status === 0) return null
+  const output = `${result.stderr ?? ''}${result.stdout ?? ''}`.trim()
+  if (/required agreement is missing or has expired/i.test(output)) {
+    return 'Apple refused the request: a required agreement is missing or has expired.\n' +
+      '    The Account Holder must accept the current Program License Agreement at\n' +
+      '    https://developer.apple.com/account — an Admin cannot. This is about the\n' +
+      '    account, not this build.'
   }
+  if (/no keychain profile|could not find/i.test(output)) return 'no stored notarytool credentials'
+  return output.split('\n')[0] || 'notarytool could not be reached'
+}
+
+/**
+ * A release build that cannot notarise must fail rather than quietly hand back
+ * an installer that Gatekeeper will block. `package:mac:signed` sets this; CI,
+ * which deliberately builds unsigned, does not.
+ */
+function notarizationRequired() {
+  return process.env.TERMITE_REQUIRE_NOTARIZATION === '1'
 }
 
 exports.default = async function afterSign(context) {
@@ -53,13 +76,12 @@ exports.default = async function afterSign(context) {
 
   const env = process.env
   const useEnv = Boolean(env.APPLE_ID && env.APPLE_APP_SPECIFIC_PASSWORD && env.APPLE_TEAM_ID)
-  const useProfile = !useEnv && hasKeychainProfile()
+  const blocked = useEnv ? null : notarizationBlockedBy()
 
-  if (!useEnv && !useProfile) {
-    console.log(
-      '  • skipping notarisation: no credentials.\n' +
-        `    Run: xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" --apple-id <id> --team-id <team>`
-    )
+  if (blocked) {
+    const message = `notarisation unavailable — ${blocked}`
+    if (notarizationRequired()) throw new Error(message)
+    console.log(`  • skipping ${message}`)
     return
   }
 
