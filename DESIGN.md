@@ -43,7 +43,23 @@ terminal does not have, so it is stated up front rather than filed under
 | **Accent** | **Near-monochrome with one signal colour** — mint `#0f9d6b` / `#34d399`, the app's own `--accent`. The violet from the icon is dropped | The poster was duotone with violet reserved for "the AI"; assigning a colour to the LLM overstated its place in the app. Colour now marks links, prompts and status, nothing else. |
 | **Type pairing** | **Mono-forward**: JetBrains Mono carries body, navigation, tables and labels. Bricolage Grotesque is kept for headings only | Inverts the poster, which was Bricolage throughout with mono only inside the terminal. JetBrains Mono is what the app ships as its default terminal font. |
 | **Motion signature** | **Fade-rise** — 10px, 240ms, no stagger beyond 40ms | Replaces the poster's 520ms left-to-right wipe, which was theatrical. Motion here should be almost unnoticed. |
-| **Ground texture** | Faint horizontal scanline at 3px, plus grain. Background layer only | The one texture that belongs to this archetype, at an intensity you have to look for. |
+| **Ground texture** | Faint horizontal scanline at 3px. Background layer only, one fixed element | The one texture that belongs to this archetype, at an intensity you have to look for. Grain was dropped: it existed to stop banding across the Poster pass's large flat colour fields, and this design has none — a tiled SVG-filter layer repainting on every scroll is not worth paying for a problem that no longer exists. |
+
+## Performance
+
+The page is text; it should feel instant. Three things that were making it not:
+
+- **The 512px app icon** was being served as the 22px header mark — 209 KB, the
+  largest asset on the page. `icon-64.png` (5 KB) is what the page loads; the
+  original is kept for `og:image` and the touch icon, which no page load fetches.
+- **The fonts stylesheet was render-blocking** for ~360ms. It is loaded out of
+  band now, and the request was cut to one static Bricolage weight — the near-flat
+  scale never used the `opsz` or `wdth` axes it was paying to download.
+- **`scroll-behavior: smooth`** turned every nav click into a long animated ride
+  down a 5700px page. Anchor jumps are instant.
+
+Keep first contentful paint under ~350ms. Re-measure after adding anything that
+loads.
 
 ## Copy rules
 

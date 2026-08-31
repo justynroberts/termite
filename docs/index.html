@@ -7,7 +7,7 @@
 <title>Termite — terminal, fleet management and LLM connectivity</title>
 <meta name="description" content="Termite is a terminal application for macOS and Windows. SSH in tabs and split panes, SFTP, port forwarding, multi-host fleet runbooks, and LLM connectivity with your own API key. MIT licensed.">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" href="icon.png">
+<link rel="icon" href="icon-64.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Termite">
@@ -24,7 +24,11 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" as="style"
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=JetBrains+Mono:wght@400;500&display=swap"
+  onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -33,7 +37,7 @@
 
 <header class="top">
   <div class="wrap top-in">
-    <a class="brand" href="./"><img src="icon.png" alt="" width="22" height="22"><b>termite</b></a>
+    <a class="brand" href="./"><img src="icon-64.png" alt="" width="22" height="22"><b>termite</b></a>
     <span class="ver" id="ver">v0.9.0</span>
     <span class="top-sp"></span>
     <nav>
