@@ -145,7 +145,7 @@ export default function App(): JSX.Element {
     activeTab?.kind === 'terminal' && (activeTab.columns?.flat().length ?? 0) > 1
 
   return (
-    <div className={`shell ${zen ? 'zen' : ''}`}>
+    <div className={`shell ${zen ? 'zen' : ''} ${aiOpen && settings.aiEnabled ? 'ai-open' : ''}`}>
       {zen && (
         <button className="zen-exit" title="Exit zen mode (Ctrl+Shift+Z)" onClick={toggleZen}>
           <IconX size={13} /> zen

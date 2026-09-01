@@ -10,6 +10,17 @@ import { DEFAULT_SETTINGS } from '../../shared/types'
 
 export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'runbooks' | 'audit' | 'settings'
 
+/** Something on screen the AI can be asked about, other than a terminal. */
+export interface AiSubject {
+  /** Shown on the drawer's chip, e.g. "session · web-01". */
+  label: string
+  /** Built lazily: a transcript can be large and is only needed if asked for. */
+  context: () => string
+  kind: AIRequest['kind']
+  /** Quick actions offered for this subject. */
+  actions: Array<{ label: string; prompt: string }>
+}
+
 /** A question handed to the AI drawer from elsewhere in the app. */
 export interface AiSeed {
   kind: AIRequest['kind']
@@ -93,6 +104,13 @@ interface AppState {
   runs: Record<string, RunState>
   /** A question queued for the AI drawer, consumed once when it opens. */
   aiSeed: AiSeed | null
+  /**
+   * What the AI would be talking about on the current screen, when that is not
+   * a terminal. Published by whichever view owns the selection — the audit page
+   * knows which transcript is open, and nothing else can.
+   */
+  aiSubject: AiSubject | null
+  setAiSubject(subject: AiSubject | null): void
   askAI(seed: AiSeed): void
   clearAiSeed(): void
   refreshRunbooks(): Promise<void>
@@ -164,6 +182,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const [runbooks, setRunbooks] = useState<Runbook[]>([])
   const [runs, setRuns] = useState<Record<string, RunState>>({})
   const [aiSeed, setAiSeed] = useState<AiSeed | null>(null)
+  const [aiSubject, setAiSubject] = useState<AiSubject | null>(null)
   const [activeForwards, setActiveForwards] = useState<string[]>([])
   const [settings, setSettings] = useState<AppSettings>({ ...DEFAULT_SETTINGS })
   const [tabs, setTabs] = useState<Tab[]>([])
@@ -626,6 +645,8 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     aiSeed,
     askAI: (seed: AiSeed) => { setAiSeed(seed); setAiOpen(true) },
     clearAiSeed: () => setAiSeed(null),
+    aiSubject,
+    setAiSubject,
     tabs, activeTabId, setActiveTabId,
     aiOpen, setAiOpen,
     transfers, toasts, toast,

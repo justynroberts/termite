@@ -13,7 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JSX.Element {
-  const { runs, cancelRun, hosts, askAI } = useApp()
+  const { runs, cancelRun, hosts, askAI, setAiSubject } = useApp()
   const run = tab.runId ? runs[tab.runId] : undefined
 
   if (!run) return <div className="runbook-view empty">Run not found (it may predate an app restart).</div>
@@ -25,6 +25,23 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
     (n, step) => n + step.hosts.filter((h) => h.status === 'failed').length,
     0
   )
+
+  // Offer this run to the AI drawer for as long as it is on screen, so the
+  // drawer is useful when opened directly rather than only through the buttons
+  // above. Built lazily — a run transcript is not cheap to assemble.
+  useEffect(() => {
+    setAiSubject({
+      label: `run · ${run.runbookName}`,
+      kind: 'explain-run',
+      context: () => runTranscript(run, hostLabel),
+      actions: [
+        { label: 'Summarise this run', prompt: 'Summarise this run across the fleet.' },
+        { label: 'Explain failures', prompt: 'Which hosts failed and why, and how do I fix them?' },
+        { label: 'Is the fleet consistent?', prompt: 'Did this run leave the fleet in a consistent state, or did it apply to some hosts and not others?' }
+      ]
+    })
+    return () => setAiSubject(null)
+  }, [run, setAiSubject])
 
   return (
     <div className="runbook-view">

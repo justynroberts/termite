@@ -25,7 +25,7 @@ function isPotentiallyDestructive(command: string): boolean {
 }
 
 export default function AIDrawer(): JSX.Element {
-  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId, aiSeed, clearAiSeed } = useApp()
+  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId, aiSeed, clearAiSeed, aiSubject } = useApp()
   const activeTab = tabs.find((tab) => tab.id === activeTabId)
   const memoryKey = activeTab?.kind === 'terminal' ? `host:${activeTab.hostId}` : 'general'
   const memoryKeyRef = useRef(memoryKey)
@@ -55,6 +55,9 @@ export default function AIDrawer(): JSX.Element {
   }, [])
 
   const hasTerminal = !!activeSessionId
+  // A subject published by the current screen wins over the focused terminal:
+  // if you are looking at a run or a transcript, that is what you mean.
+  const subject = aiSubject
 
   // A question queued from elsewhere — the runbook run view — runs once as soon
   // as the drawer is up, then clears so reopening does not re-ask it.
@@ -115,6 +118,10 @@ export default function AIDrawer(): JSX.Element {
     const text = input.trim()
     if (!text) return
     setInput('')
+    if (subject) {
+      void ask(subject.kind, text, text, { context: subject.context(), label: subject.label })
+      return
+    }
     // Heuristic: if it reads like a request for a command, use nl2cmd; otherwise chat
     const wantsCommand = /^(how do i|show me|list|find|kill|restart|install|create|delete|check|get|make|set up|setup|tail|grep|count|compress|extract|copy|move|download|upload|mount|start|stop|enable|disable|update|upgrade)\b/i.test(text)
     void ask(wantsCommand ? 'nl2cmd' : 'chat', text)
@@ -196,33 +203,64 @@ export default function AIDrawer(): JSX.Element {
       </div>
       <div className="ai-input-row">
         <div className="ai-quick-actions">
-          <button
-            className="chip"
-            onClick={() => ask('explain-error', 'Explain the most recent error in my terminal and how to fix it.', 'Explain last error')}
-            disabled={!hasTerminal || busy}
-          >
-            <IconRefresh size={12} /> Explain last error
-          </button>
-          <button
-            className="chip"
-            onClick={() => ask('explain-output', 'Explain what the recent terminal output means.', 'Explain output')}
-            disabled={!hasTerminal || busy}
-          >
-            <IconSearch size={12} /> Explain output
-          </button>
-          <button
-            className="chip"
-            onClick={() => ask('summarize', 'Summarize this terminal session.', 'Summarize session')}
-            disabled={!hasTerminal || busy}
-          >
-            <IconFile size={12} /> Summarize session
-          </button>
+          {subject ? (
+            <>
+              <span className="chip chip-subject" title="What these actions will look at">
+                {subject.label}
+              </span>
+              {subject.actions.map((action) => (
+                <button
+                  key={action.label}
+                  className="chip"
+                  disabled={busy}
+                  onClick={() =>
+                    ask(subject.kind, action.prompt, action.label, {
+                      context: subject.context(),
+                      label: subject.label
+                    })
+                  }
+                >
+                  {action.label}
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              <button
+                className="chip"
+                onClick={() => ask('explain-error', 'Explain the most recent error in my terminal and how to fix it.', 'Explain last error')}
+                disabled={!hasTerminal || busy}
+              >
+                <IconRefresh size={12} /> Explain last error
+              </button>
+              <button
+                className="chip"
+                onClick={() => ask('explain-output', 'Explain what the recent terminal output means.', 'Explain output')}
+                disabled={!hasTerminal || busy}
+              >
+                <IconSearch size={12} /> Explain output
+              </button>
+              <button
+                className="chip"
+                onClick={() => ask('summarize', 'Summarize this terminal session.', 'Summarize session')}
+                disabled={!hasTerminal || busy}
+              >
+                <IconFile size={12} /> Summarize session
+              </button>
+            </>
+          )}
         </div>
         <div className="ai-input-box">
           <textarea
             ref={inputRef}
             value={input}
-            placeholder={hasTerminal ? 'Describe what you want to do…' : 'Ask me anything…'}
+            placeholder={
+              subject
+                ? `Ask about this ${subject.label.split(' · ')[0]}…`
+                : hasTerminal
+                  ? 'Describe what you want to do…'
+                  : 'Ask me anything…'
+            }
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

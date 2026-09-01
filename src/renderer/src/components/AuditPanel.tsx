@@ -15,7 +15,7 @@ export default function AuditPanel(): JSX.Element {
   const [openSession, setOpenSession] = useState<SessionLogSummary | null>(null)
   const [transcript, setTranscript] = useState<string>('')
   const [transcriptLoading, setTranscriptLoading] = useState(false)
-  const { toast } = useApp()
+  const { toast, setAiSubject } = useApp()
 
   // Escape closes the detail view, matching every other panel in the app.
   useEffect(() => {
@@ -54,6 +54,34 @@ export default function AuditPanel(): JSX.Element {
     try { setTranscript(await window.termite.activity.session(item.id)) } finally { setTranscriptLoading(false) }
   }
 
+  // Offer the open transcript, or the open event, to the AI drawer. Withdrawn
+  // when nothing is open or the page is left, so the drawer never claims context
+  // it no longer has.
+  useEffect(() => {
+    if (openSession) {
+      setAiSubject({
+        label: `session · ${openSession.hostLabel}`,
+        kind: 'summarize',
+        context: () => transcript,
+        actions: [
+          { label: 'What happened here', prompt: 'Summarise this session: what was run, what the results were, and anything notable.' },
+          { label: 'Explain any errors', prompt: 'Are there errors in this session? Explain them and how to fix them.' },
+          { label: 'What commands ran', prompt: 'List the commands that were run in this session, in order, with a one-line note on what each did.' }
+        ]
+      })
+    } else if (selected) {
+      setAiSubject({
+        label: `event · ${selected.action}`,
+        kind: 'explain-output',
+        context: () => JSON.stringify(selected, null, 2),
+        actions: [{ label: 'Explain this event', prompt: 'Explain this audit event in plain language, and whether it is worth attention.' }]
+      })
+    } else {
+      setAiSubject(null)
+    }
+    return () => setAiSubject(null)
+  }, [openSession, selected, transcript, setAiSubject])
+
   return (
     <div className="audit-page">
       <div className="audit-heading">
@@ -77,6 +105,7 @@ export default function AuditPanel(): JSX.Element {
         <IconSearch size={15} />
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === 'events' ? 'Search actor, action, host, command…' : 'Search host or transcript contents…'} />
       </label>
+      <div className="audit-body">
       {tab === 'sessions' ? (
         <div className="audit-table-wrap">
           <table className="audit-table">
@@ -197,6 +226,7 @@ export default function AuditPanel(): JSX.Element {
           <pre className="audit-detail-body select-text">{selected.detail?.trim() || 'No further detail recorded.'}</pre>
         </div>
       )}
+      </div>
     </div>
   )
 }
