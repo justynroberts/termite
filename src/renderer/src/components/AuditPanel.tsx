@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type JSX } from 'react'
-import type { AuditEvent } from '../../../shared/types'
+import type { AuditEvent, SessionLogSummary } from '../../../shared/types'
 import { IconCopy, IconRefresh, IconSearch, IconX } from '../icons'
 import { useApp } from '../state'
 
@@ -8,27 +8,51 @@ export default function AuditPanel(): JSX.Element {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<AuditEvent | null>(null)
+  // The event log records that a session happened; the transcript records what
+  // was typed in it. Both are already captured — only the events were shown.
+  const [tab, setTab] = useState<'events' | 'sessions'>('events')
+  const [sessions, setSessions] = useState<SessionLogSummary[]>([])
+  const [openSession, setOpenSession] = useState<SessionLogSummary | null>(null)
+  const [transcript, setTranscript] = useState<string>('')
+  const [transcriptLoading, setTranscriptLoading] = useState(false)
   const { toast } = useApp()
 
   // Escape closes the detail view, matching every other panel in the app.
   useEffect(() => {
-    if (!selected) return
+    if (!selected && !openSession) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setSelected(null)
+      if (e.key !== 'Escape') return
+      setSelected(null)
+      setOpenSession(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selected])
+  }, [selected, openSession])
 
   const load = useCallback(async (search = query): Promise<void> => {
     setLoading(true)
     try { setEvents(await window.termite.activity.audit(search)) } finally { setLoading(false) }
   }, [query])
 
+  const loadSessions = useCallback(async (search = query): Promise<void> => {
+    setLoading(true)
+    try { setSessions(await window.termite.activity.sessions(search)) } finally { setLoading(false) }
+  }, [query])
+
   useEffect(() => {
-    const timer = setTimeout(() => void load(query), 180)
+    const timer = setTimeout(() => {
+      if (tab === 'events') void load(query)
+      else void loadSessions(query)
+    }, 180)
     return () => clearTimeout(timer)
-  }, [query, load])
+  }, [query, tab, load, loadSessions])
+
+  const showSession = async (item: SessionLogSummary): Promise<void> => {
+    setSelected(null)
+    setOpenSession(item)
+    setTranscriptLoading(true)
+    try { setTranscript(await window.termite.activity.session(item.id)) } finally { setTranscriptLoading(false) }
+  }
 
   return (
     <div className="audit-page">
@@ -37,12 +61,52 @@ export default function AuditPanel(): JSX.Element {
           <h1>Audit log</h1>
           <p>Who did what, where, and when. Events are retained locally for 30 days.</p>
         </div>
-        <button className="btn" onClick={() => void load()}><IconRefresh size={14} /> Refresh</button>
+        <button className="btn" onClick={() => void (tab === 'events' ? load() : loadSessions())}>
+          <IconRefresh size={14} /> Refresh
+        </button>
+      </div>
+      <div className="audit-tabs">
+        <button className={`audit-tab ${tab === 'events' ? 'on' : ''}`} onClick={() => { setTab('events'); setOpenSession(null) }}>
+          Events
+        </button>
+        <button className={`audit-tab ${tab === 'sessions' ? 'on' : ''}`} onClick={() => { setTab('sessions'); setSelected(null) }}>
+          Session transcripts
+        </button>
       </div>
       <label className="audit-search">
         <IconSearch size={15} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search actor, action, host, command…" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tab === 'events' ? 'Search actor, action, host, command…' : 'Search host or transcript contents…'} />
       </label>
+      {tab === 'sessions' ? (
+        <div className="audit-table-wrap">
+          <table className="audit-table">
+            <thead><tr><th>Host</th><th>Started</th><th>Ended</th><th>Recorded</th></tr></thead>
+            <tbody>
+              {sessions.map((item) => (
+                <tr
+                  key={item.id}
+                  className={`audit-row ${openSession?.id === item.id ? 'selected' : ''}`}
+                  tabIndex={0}
+                  role="button"
+                  onClick={() => void showSession(item)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void showSession(item) }
+                  }}
+                >
+                  <td>{item.hostLabel}</td>
+                  <td className="audit-when">{new Date(item.startedAt).toLocaleString()}</td>
+                  <td className="audit-when">{item.endedAt ? new Date(item.endedAt).toLocaleTimeString() : 'still open'}</td>
+                  <td>{item.bytes.toLocaleString()} bytes</td>
+                </tr>
+              ))}
+              {!loading && sessions.length === 0 && (
+                <tr><td colSpan={4} className="audit-empty">No session transcripts in the last 30 days.</td></tr>
+              )}
+            </tbody>
+          </table>
+          {loading && <div className="audit-loading">Loading sessions…</div>}
+        </div>
+      ) : (
       <div className="audit-table-wrap">
         <table className="audit-table">
           <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Result</th><th>What</th></tr></thead>
@@ -74,6 +138,31 @@ export default function AuditPanel(): JSX.Element {
         </table>
         {loading && <div className="audit-loading">Loading audit events…</div>}
       </div>
+      )}
+
+      {openSession && (
+        <div className="audit-detail-pane">
+          <div className="audit-detail-head">
+            <span className="audit-detail-title">{openSession.hostLabel}</span>
+            <span className="hint">{new Date(openSession.startedAt).toLocaleString()}</span>
+            <span className="titlebar-spacer" />
+            <button
+              className="icon-btn"
+              title="Copy transcript"
+              onClick={() => { window.termite.clipboard.writeText(transcript); toast('Transcript copied') }}
+            >
+              <IconCopy size={14} />
+            </button>
+            <button className="icon-btn" title="Close (Esc)" onClick={() => setOpenSession(null)}>
+              <IconX size={14} />
+            </button>
+          </div>
+          <div className="audit-detail-label">Everything sent and received in this session</div>
+          <pre className="audit-detail-body audit-transcript select-text">
+            {transcriptLoading ? 'Loading transcript…' : transcript.trim() || 'Nothing was recorded for this session.'}
+          </pre>
+        </div>
+      )}
 
       {selected && (
         <div className="audit-detail-pane">

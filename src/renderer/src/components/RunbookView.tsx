@@ -40,9 +40,10 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
             <IconX size={13} /> Cancel run
           </button>
         )}
-        {/* Only once the run has stopped: asking about a half-finished run gives
-            the model a transcript that is about to change under it. */}
-        {run.status !== 'running' && (
+        {/* Available while the run is still going: the transcript is a snapshot
+            of what has happened so far, and a run that is failing part way is
+            exactly when the question gets asked. */}
+        {(
           <>
             {failedHosts > 0 && (
               <button
@@ -51,13 +52,16 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
                 onClick={() =>
                   askAI({
                     kind: 'explain-run',
-                    prompt: `Why did this run fail, and how do I fix it?`,
+                    prompt:
+                      run.status === 'running'
+                        ? 'This run is still going. What is failing so far, and should I let it continue?'
+                        : 'Why did this run fail, and how do I fix it?',
                     context: runTranscript(run, hostLabel),
                     label: `${run.runbookName} (run)`
                   })
                 }
               >
-                Explain failure
+                {run.status === 'running' ? 'Explain failures so far' : 'Explain failure'}
               </button>
             )}
             <button
@@ -66,13 +70,16 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
               onClick={() =>
                 askAI({
                   kind: 'explain-run',
-                  prompt: 'Summarise this run across the fleet.',
+                  prompt:
+                    run.status === 'running'
+                      ? 'Summarise what this run has done across the fleet so far. It is still in progress.'
+                      : 'Summarise this run across the fleet.',
                   context: runTranscript(run, hostLabel),
                   label: `${run.runbookName} (run)`
                 })
               }
             >
-              Summarise run
+              {run.status === 'running' ? 'Summarise so far' : 'Summarise run'}
             </button>
           </>
         )}

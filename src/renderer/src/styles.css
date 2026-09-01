@@ -939,6 +939,30 @@ code.inline { font-family: var(--font-mono); background: var(--bg-0); padding: 1
   font-size: 12px;
 }
 
+.audit-tabs { display: flex; gap: 2px; margin: 0 0 10px; }
+.audit-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: color 0.14s ease, border-color 0.14s ease;
+}
+.audit-tab:hover { color: var(--text-0); }
+.audit-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* A transcript is terminal output: it must not be reflowed or the columns of
+   anything the user ran will not line up. */
+.audit-transcript {
+  font-family: var(--font-mono, ui-monospace, Menlo, monospace);
+  white-space: pre;
+  overflow-x: auto;
+  max-height: 340px;
+}
+
 /* Audit rows open a detail pane: the table truncates commands and paths to a
    line, and reading the whole thing is the reason to click. */
 .audit-row { cursor: pointer; transition: background-color 0.12s ease; }

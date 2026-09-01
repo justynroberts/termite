@@ -77,9 +77,18 @@ function createWindow(): void {
     }
   })
 
+  /**
+   * Hold the splash a little past ready-to-show. The window is usually ready
+   * quickly enough that the splash is a flash rather than a screen, which reads
+   * as a glitch; the extra beat lets it actually be seen.
+   */
+  const SPLASH_LINGER = 2000
+
   mainWindow.on('ready-to-show', () => {
-    splashWindow?.close()
-    mainWindow?.show()
+    setTimeout(() => {
+      splashWindow?.close()
+      mainWindow?.show()
+    }, SPLASH_LINGER)
   })
   mainWindow.on('closed', () => (mainWindow = null))
 
