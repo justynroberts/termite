@@ -32,9 +32,9 @@ export default function RunbooksPanel(): JSX.Element {
   }, [editing])
 
   const run = (rb: Runbook): void => {
-    const bad = rb.steps.find((s) => s.hostIds.length === 0)
+    const bad = rb.steps.find((s) => s.hostIds.length === 0 && (s.targetTags?.length ?? 0) === 0)
     if (rb.steps.length === 0 || bad) {
-      toast(bad ? `Step "${bad.name || '?'}" has no target hosts` : 'Runbook has no steps', 'warn')
+      toast(bad ? `Step "${bad.name || '?'}" has no target hosts or tags` : 'Runbook has no steps', 'warn')
       return
     }
     runRunbook(rb)
@@ -135,6 +135,36 @@ function RunbookEditor({
         ? step.hostIds.filter((h) => h !== hostId)
         : [...step.hostIds, hostId]
     })
+
+  const toggleTag = (step: RunbookStep, tag: string): void => {
+    const current = step.targetTags ?? []
+    setStep(step.id, {
+      targetTags: current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
+    })
+  }
+
+  /** Every tag in use across the host vault, so the picker offers real ones only. */
+  const allTags = [...new Set(hosts.flatMap((h) => h.tags ?? []).map((t) => t.trim()).filter(Boolean))].sort()
+
+  /**
+   * What the step will actually hit, counted the way the runner counts it. The
+   * point of a tag is that this number can change without the runbook changing,
+   * so it is worth showing before anyone presses run.
+   */
+  const targetSummary = (step: RunbookStep): string => {
+    const wanted = new Set((step.targetTags ?? []).map((t) => t.toLowerCase()))
+    const matched = new Set(step.hostIds)
+    if (wanted.size > 0) {
+      for (const h of hosts) {
+        if (h.tags?.some((t) => wanted.has(t.trim().toLowerCase()))) matched.add(h.id)
+      }
+    }
+    const n = matched.size
+    if (n === 0) return 'No hosts targeted — this step would fail.'
+    const named = step.hostIds.length
+    const byTag = n - named > 0 ? `, ${n - named} by tag` : ''
+    return `${n} host${n === 1 ? '' : 's'} targeted${byTag}. Tags are resolved when the run starts.`
+  }
 
   const draftWithAI = async (): Promise<void> => {
     if (!aiPrompt.trim()) return
@@ -253,6 +283,21 @@ function RunbookEditor({
                 ))}
                 {hosts.length === 0 && <span className="hint">No hosts yet — add some in the Hosts panel.</span>}
               </div>
+              {allTags.length > 0 && (
+                <div className="step-hosts step-tags">
+                  <span className="hint step-tags-label">or by tag</span>
+                  {allTags.map((tag) => {
+                    const on = (step.targetTags ?? []).includes(tag)
+                    return (
+                      <label key={tag} className={`host-chip tag-chip ${on ? 'on' : ''}`}>
+                        <input type="checkbox" checked={on} onChange={() => toggleTag(step, tag)} />
+                        {tag}
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="hint step-target-count">{targetSummary(step)}</div>
               <div className="step-opts">
                 <label>
                   <input

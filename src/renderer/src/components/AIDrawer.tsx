@@ -25,7 +25,7 @@ function isPotentiallyDestructive(command: string): boolean {
 }
 
 export default function AIDrawer(): JSX.Element {
-  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId } = useApp()
+  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId, aiSeed, clearAiSeed } = useApp()
   const activeTab = tabs.find((tab) => tab.id === activeTabId)
   const memoryKey = activeTab?.kind === 'terminal' ? `host:${activeTab.hostId}` : 'general'
   const memoryKeyRef = useRef(memoryKey)
@@ -56,7 +56,25 @@ export default function AIDrawer(): JSX.Element {
 
   const hasTerminal = !!activeSessionId
 
-  const ask = async (kind: AIRequest['kind'], prompt: string, showAs?: string): Promise<void> => {
+  // A question queued from elsewhere — the runbook run view — runs once as soon
+  // as the drawer is up, then clears so reopening does not re-ask it.
+  useEffect(() => {
+    if (!aiSeed || busy) return
+    const seed = aiSeed
+    clearAiSeed()
+    void ask(seed.kind, seed.prompt, seed.prompt, { context: seed.context, label: seed.label })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiSeed])
+
+  const ask = async (
+    kind: AIRequest['kind'],
+    prompt: string,
+    showAs?: string,
+    // Supplied when the question is about something that is not the focused
+    // terminal — a runbook run, say. The main process only substitutes session
+    // scrollback when no context came with the request.
+    override?: { context: string; label: string }
+  ): Promise<void> => {
     if (busy) return
     if (!settings.anthropicApiKey) {
       toast('Add your Anthropic API key in Settings first', 'warn')
@@ -71,7 +89,16 @@ export default function AIDrawer(): JSX.Element {
       const history = prior
         .filter((message) => !message.error)
         .map((message) => ({ role: message.role, content: message.text }))
-      const res = await window.termite.ai.run({ kind, prompt, history, hostLabel: activeTab?.title }, activeSessionId)
+      const res = await window.termite.ai.run(
+        {
+          kind,
+          prompt,
+          history,
+          hostLabel: override?.label ?? activeTab?.title,
+          ...(override ? { terminalContext: override.context } : {})
+        },
+        override ? undefined : activeSessionId
+      )
       if (res.ok && res.text) {
         appendMemory(key, { role: 'assistant', text: res.text, command: res.command })
       } else {

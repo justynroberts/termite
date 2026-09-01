@@ -70,22 +70,63 @@ export class RunbookRunner {
     for (const c of state.clients) c.end()
   }
 
+  /**
+   * The hosts a step targets: those named individually, plus every host
+   * carrying any of its tags.
+   *
+   * Resolved at run time on purpose. "Run this against everything tagged
+   * production" has to mean the fleet as it stands now, not as it stood when
+   * the runbook was written — otherwise a host added later is quietly missed,
+   * which is the failure mode tags exist to prevent.
+   */
+  private resolveTargets(step: RunbookStep): string[] {
+    const targets = new Set(step.hostIds)
+    const tags = step.targetTags ?? []
+    if (tags.length > 0) {
+      const wanted = new Set(tags.map((t) => t.trim().toLowerCase()).filter(Boolean))
+      for (const host of this.store.listHosts()) {
+        if (host.tags?.some((t) => wanted.has(t.trim().toLowerCase()))) targets.add(host.id)
+      }
+    }
+    return [...targets]
+  }
+
   private async execute(runId: string, runbook: Runbook, state: ActiveRun): Promise<void> {
     this.send({ runId, kind: 'run-start' })
     let runOk = true
 
     for (const step of runbook.steps) {
       if (state.cancelled) break
-      this.send({ runId, kind: 'step-start', stepId: step.id })
+
+      const targets = this.resolveTargets(step)
+
+      // A step that resolves to nothing used to pass silently: an empty target
+      // list made `every` vacuously true. With tag targeting that is a trap —
+      // a typo in a tag, or the last host losing it, would report a clean run
+      // of a change that reached no machine at all.
+      if (targets.length === 0) {
+        const detail = step.targetTags?.length
+          ? `no hosts are tagged ${step.targetTags.join(' or ')}`
+          : 'no target hosts'
+        this.send({ runId, kind: 'step-start', stepId: step.id, hostIds: [] })
+        this.send({ runId, kind: 'step-done', stepId: step.id, ok: false, error: detail })
+        runOk = false
+        if (!step.continueOnError) break
+        continue
+      }
+
+      // Resolved here rather than at save time, so the renderer shows the hosts
+      // this run actually touched rather than the ones named when it was written.
+      this.send({ runId, kind: 'step-start', stepId: step.id, hostIds: targets })
 
       const runHost = (hostId: string): Promise<boolean> => this.runOnHost(runId, step, hostId, state)
 
       let results: boolean[]
       if (step.parallel) {
-        results = await Promise.all(step.hostIds.map(runHost))
+        results = await Promise.all(targets.map(runHost))
       } else {
         results = []
-        for (const hostId of step.hostIds) {
+        for (const hostId of targets) {
           if (state.cancelled) break
           const ok = await runHost(hostId)
           results.push(ok)
@@ -94,7 +135,7 @@ export class RunbookRunner {
         }
       }
 
-      const stepOk = results.length === step.hostIds.length && results.every(Boolean)
+      const stepOk = results.length === targets.length && results.every(Boolean)
       this.send({ runId, kind: 'step-done', stepId: step.id, ok: stepOk, cancelled: state.cancelled })
       if (!stepOk) {
         runOk = false

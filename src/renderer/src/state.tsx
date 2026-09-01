@@ -3,11 +3,22 @@ import {
   type JSX, type ReactNode
 } from 'react'
 import type {
-  AppSettings, Host, PortForward, Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet, TransferProgress
+  AIRequest, AppSettings, Host, PortForward, Runbook, RunbookEvent, SSHKey, SessionInfo, Snippet,
+  TransferProgress
 } from '../../shared/types'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 
 export type View = 'hosts' | 'keys' | 'snippets' | 'forwards' | 'runbooks' | 'audit' | 'settings'
+
+/** A question handed to the AI drawer from elsewhere in the app. */
+export interface AiSeed {
+  kind: AIRequest['kind']
+  prompt: string
+  /** Pre-built context; when set, the main process does not substitute its own. */
+  context: string
+  /** What the conversation is about, shown in the transcript and sent as hostLabel. */
+  label: string
+}
 
 // ---- runbook run tracking ----
 export interface RunHostState {
@@ -22,6 +33,8 @@ export interface RunStepState {
   name: string
   status: 'pending' | 'running' | 'ok' | 'failed' | 'skipped'
   hosts: RunHostState[]
+  /** why the step failed before reaching any host (e.g. no hosts matched its tags) */
+  error?: string
 }
 export interface RunState {
   runId: string
@@ -78,6 +91,10 @@ interface AppState {
   forwards: PortForward[]
   runbooks: Runbook[]
   runs: Record<string, RunState>
+  /** A question queued for the AI drawer, consumed once when it opens. */
+  aiSeed: AiSeed | null
+  askAI(seed: AiSeed): void
+  clearAiSeed(): void
   refreshRunbooks(): Promise<void>
   runRunbook(rb: Runbook): Promise<void>
   cancelRun(runId: string): void
@@ -146,6 +163,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
   const [forwards, setForwards] = useState<PortForward[]>([])
   const [runbooks, setRunbooks] = useState<Runbook[]>([])
   const [runs, setRuns] = useState<Record<string, RunState>>({})
+  const [aiSeed, setAiSeed] = useState<AiSeed | null>(null)
   const [activeForwards, setActiveForwards] = useState<string[]>([])
   const [settings, setSettings] = useState<AppSettings>({ ...DEFAULT_SETTINGS })
   const [tabs, setTabs] = useState<Tab[]>([])
@@ -239,7 +257,23 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
         const host = step?.hosts.find((h) => h.hostId === ev.hostId)
         switch (ev.kind) {
           case 'step-start':
-            if (step) step.status = 'running'
+            if (step) {
+              step.status = 'running'
+              // Tag targets are resolved by the runner, so the hosts a step
+              // actually reaches are only known now. Replace the placeholder
+              // list rather than trusting what the runbook was saved with,
+              // keeping any host already carrying output.
+              if (ev.hostIds) {
+                step.hosts = ev.hostIds.map(
+                  (hostId) =>
+                    step.hosts.find((h) => h.hostId === hostId) ?? {
+                      hostId,
+                      status: 'pending' as const,
+                      output: ''
+                    }
+                )
+              }
+            }
             break
           case 'host-start':
             if (host) host.status = 'running'
@@ -257,7 +291,10 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
             }
             break
           case 'step-done':
-            if (step) step.status = ev.ok ? 'ok' : 'failed'
+            if (step) {
+              step.status = ev.ok ? 'ok' : 'failed'
+              if (ev.error) step.error = ev.error
+            }
             break
           case 'run-done':
             next.status = ev.cancelled ? 'cancelled' : ev.ok ? 'ok' : 'failed'
@@ -586,6 +623,9 @@ export function AppStateProvider({ children }: { children: ReactNode }): JSX.Ele
     view, setView,
     hosts, keys, snippets, forwards, activeForwards, settings,
     runbooks, runs, refreshRunbooks, runRunbook, cancelRun,
+    aiSeed,
+    askAI: (seed: AiSeed) => { setAiSeed(seed); setAiOpen(true) },
+    clearAiSeed: () => setAiSeed(null),
     tabs, activeTabId, setActiveTabId,
     aiOpen, setAiOpen,
     transfers, toasts, toast,

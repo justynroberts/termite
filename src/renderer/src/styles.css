@@ -923,6 +923,61 @@ code.inline { font-family: var(--font-mono); background: var(--bg-0); padding: 1
 .mono { font-family: var(--font-mono); }
 .select-text { user-select: text; }
 
+/* Runbook step targeting: tags read as a second, looser class of target than
+   the individually named hosts above them. */
+.step-tags { margin-top: 6px; align-items: center; }
+.step-tags-label { margin-right: 4px; }
+.host-chip.tag-chip { font-style: italic; }
+.host-chip.tag-chip.on { border-style: dashed; }
+.step-target-count { margin: 6px 0 2px; }
+.run-step-error {
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--danger);
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-size: 12px;
+}
+
+/* Audit rows open a detail pane: the table truncates commands and paths to a
+   line, and reading the whole thing is the reason to click. */
+.audit-row { cursor: pointer; transition: background-color 0.12s ease; }
+.audit-row:hover td { background: var(--bg-2); }
+.audit-row.selected td { background: var(--accent-dim); }
+.audit-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.audit-detail-pane {
+  border-top: 1px solid var(--border);
+  background: var(--bg-1);
+  padding: 12px 16px 16px;
+  max-height: 42%;
+  overflow-y: auto;
+  animation: audit-detail-in 0.16s ease;
+}
+@keyframes audit-detail-in { from { opacity: 0; transform: translateY(6px); } }
+.audit-detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.audit-detail-title code { font-size: 13px; }
+.audit-detail-rows { margin: 0 0 12px; display: grid; gap: 2px; }
+.audit-detail-rows > div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 3px 0; }
+.audit-detail-rows dt { color: var(--text-2); font-size: 12px; }
+.audit-detail-rows dd { margin: 0; font-size: 12.5px; color: var(--text-0); }
+.audit-detail-label {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-2); margin-bottom: 4px;
+}
+.audit-detail-body {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-1);
+}
+
 /* Respect a reduced-motion preference across the whole app. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

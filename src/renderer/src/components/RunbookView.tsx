@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useApp, type RunHostState, type Tab } from '../state'
+import { runTranscript } from '../runContext'
 import { IconChevronDown, IconChevronUp, IconX } from '../icons'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -12,7 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JSX.Element {
-  const { runs, cancelRun, hosts } = useApp()
+  const { runs, cancelRun, hosts, askAI } = useApp()
   const run = tab.runId ? runs[tab.runId] : undefined
 
   if (!run) return <div className="runbook-view empty">Run not found (it may predate an app restart).</div>
@@ -20,6 +21,10 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
   const hostLabel = (id: string): string => hosts.find((h) => h.id === id)?.label ?? id
 
   const elapsed = Math.round((Date.now() - run.startedAt) / 1000)
+  const failedHosts = run.steps.reduce(
+    (n, step) => n + step.hosts.filter((h) => h.status === 'failed').length,
+    0
+  )
 
   return (
     <div className="runbook-view">
@@ -35,6 +40,42 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
             <IconX size={13} /> Cancel run
           </button>
         )}
+        {/* Only once the run has stopped: asking about a half-finished run gives
+            the model a transcript that is about to change under it. */}
+        {run.status !== 'running' && (
+          <>
+            {failedHosts > 0 && (
+              <button
+                className="btn"
+                title="Send this run's output to the AI copilot"
+                onClick={() =>
+                  askAI({
+                    kind: 'explain-run',
+                    prompt: `Why did this run fail, and how do I fix it?`,
+                    context: runTranscript(run, hostLabel),
+                    label: `${run.runbookName} (run)`
+                  })
+                }
+              >
+                Explain failure
+              </button>
+            )}
+            <button
+              className="btn"
+              title="Send this run's output to the AI copilot"
+              onClick={() =>
+                askAI({
+                  kind: 'explain-run',
+                  prompt: 'Summarise this run across the fleet.',
+                  context: runTranscript(run, hostLabel),
+                  label: `${run.runbookName} (run)`
+                })
+              }
+            >
+              Summarise run
+            </button>
+          </>
+        )}
       </div>
       <div className="run-steps">
         {run.steps.map((step, i) => (
@@ -44,6 +85,10 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
               <span className="run-step-name">{step.name || '(unnamed step)'}</span>
               <span className={`run-badge ${step.status}`}>{STATUS_LABEL[step.status]}</span>
             </div>
+            {/* A step can fail before reaching a host — most often because its
+                tags matched nothing — and then there is no host row to carry
+                the reason. */}
+            {step.error && <div className="run-step-error">{step.error}</div>}
             <div className="run-hosts">
               {step.hosts.map((h) => (
                 <HostOutput key={h.hostId} host={h} label={hostLabel(h.hostId)} />

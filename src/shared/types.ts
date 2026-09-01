@@ -164,8 +164,14 @@ export interface RunbookStep {
   name: string
   /** shell script; runs via exec with a pty on each target host */
   command: string
-  /** target hosts for this step */
+  /** target hosts for this step, named individually */
   hostIds: string[]
+  /**
+   * Target every host carrying any of these tags, resolved when the run starts
+   * rather than when the runbook is saved — so a host tagged `production`
+   * tomorrow is included without editing the runbook. Combined with `hostIds`.
+   */
+  targetTags?: string[]
   /** run across hosts concurrently (true) or one host at a time (false) */
   parallel: boolean
   /** keep going to the next step even if a host fails */
@@ -200,6 +206,8 @@ export interface RunbookEvent {
     | 'run-done'
   stepId?: string
   hostId?: string
+  /** the hosts a step actually resolved to (kind: step-start) */
+  hostIds?: string[]
   /** terminal output chunk (kind: data) */
   data?: string
   /** exit code (kind: host-done) */
@@ -211,7 +219,7 @@ export interface RunbookEvent {
 }
 
 export interface AIRequest {
-  kind: 'nl2cmd' | 'explain-error' | 'explain-output' | 'summarize' | 'chat' | 'draft-runbook'
+  kind: 'nl2cmd' | 'explain-error' | 'explain-output' | 'summarize' | 'chat' | 'draft-runbook' | 'explain-run'
   prompt: string
   /** recent terminal output for context */
   terminalContext?: string
