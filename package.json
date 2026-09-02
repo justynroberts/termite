@@ -1,7 +1,7 @@
 {
   "name": "termite",
   "version": "0.9.3",
-  "description": "Termite — a modern, AI-first SSH client for Mac and Windows",
+  "description": "Termite \u2014 a modern, AI-first SSH client for Mac and Windows",
   "main": "out/main/index.js",
   "author": "Justyn Roberts <justyn@fintonlabs.com>",
   "license": "MIT",
@@ -130,7 +130,8 @@
       {
         "provider": "github",
         "owner": "justynroberts",
-        "repo": "termite"
+        "repo": "termite",
+        "releaseType": "release"
       }
     ],
     "afterSign": "scripts/notarize.js",
