@@ -45,7 +45,7 @@ function createSplash(): void {
     .load{width:72px;height:3px;margin-top:7px;border-radius:9px;overflow:hidden;background:#23303d}
     .load:after{content:"";display:block;width:34px;height:100%;border-radius:9px;background:#10b981;animation:a 1s ease-in-out infinite alternate}
     @keyframes a{from{transform:translateX(-16px)}to{transform:translateX(54px)}}
-  </style></head><body><main><div class="mark">🐜</div><h1>Termite</h1><p>AI-first SSH workspace</p><div class="load"></div></main></body></html>`
+  </style></head><body><main><div class="mark">🐜</div><h1>Termite</h1><p>A terminal built for productivity</p><div class="load"></div></main></body></html>`
   void splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
   splashWindow.on('closed', () => (splashWindow = null))
 }
