@@ -33,6 +33,12 @@ jobs:
         with:
           # workflow_dispatch with a tag backfills a release that was cut for
           # macOS first; without it this builds whatever the default branch has.
+          #
+          # Note electron-builder refuses to publish into a release created more
+          # than two hours ago. On a tag push that never bites, because the tag
+          # is created by the release itself. Backfilling something older means
+          # taking the artifacts from this run and attaching them by hand:
+          #   gh run download <id> && gh release upload <tag> <files> latest.yml
           ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v4
