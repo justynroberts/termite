@@ -103,6 +103,13 @@ export interface TermiteAPI {
   }
   appInfo(): Promise<{ version: string; electron: string; node: string; platform: string }>
   openExternal(url: string): Promise<void>
+  /** Renderer-side failures, so a blank window leaves a trace in the log. */
+  reportError(report: {
+    message: string
+    stack: string
+    componentStack: string
+    source: string
+  }): void
   platform: string
 }
 
@@ -211,6 +218,7 @@ const api: TermiteAPI = {
   },
   appInfo: () => ipcRenderer.invoke('app:info'),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  reportError: (report) => ipcRenderer.send('app:report-error', report),
   platform: process.platform
 }
 

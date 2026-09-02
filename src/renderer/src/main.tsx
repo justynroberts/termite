@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import CrashBoundary, { installGlobalErrorLogging } from './components/CrashBoundary'
 import { AppStateProvider } from './state'
 // bundled fonts (work offline, packaged with the app)
 import '@fontsource-variable/afacad'
@@ -15,10 +16,13 @@ import '@fontsource/source-code-pro/700.css'
 import './styles.css'
 
 function render(): void {
+  installGlobalErrorLogging()
   ReactDOM.createRoot(document.getElementById('root')!).render(
-    <AppStateProvider>
-      <App />
-    </AppStateProvider>
+    <CrashBoundary>
+      <AppStateProvider>
+        <App />
+      </AppStateProvider>
+    </CrashBoundary>
   )
 }
 

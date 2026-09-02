@@ -1063,3 +1063,50 @@ code.inline { font-family: var(--font-mono); background: var(--bg-0); padding: 1
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- crash boundary ------------------------------------------------------ */
+.crash {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--bg, #0d1117);
+  overflow: auto;
+}
+.crash-card {
+  width: min(680px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.crash-card h1 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+}
+.crash-card p {
+  margin: 0;
+  color: var(--muted, #91a1b5);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.crash-stack {
+  margin: 0;
+  max-height: 46vh;
+  overflow: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #23303d);
+  border-radius: 10px;
+  background: var(--panel, #11161d);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+.crash-actions {
+  display: flex;
+  gap: 8px;
+}

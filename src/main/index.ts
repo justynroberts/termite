@@ -132,6 +132,20 @@ app.whenReady().then(() => {
   })
   ipcMain.on('clipboard:write', (_e, text: string) => clipboard.writeText(text ?? ''))
 
+  // A renderer that throws has no console anyone will see. Put it on stderr,
+  // where the dev server and a terminal-launched build both show it.
+  ipcMain.on(
+    'app:report-error',
+    (
+      _e,
+      report: { message: string; stack: string; componentStack: string; source: string }
+    ) => {
+      console.error(
+        `[renderer:${report.source}] ${report.message}\n${report.stack}${report.componentStack}`
+      )
+    }
+  )
+
   ipcMain.handle('shell:open-external', (_e, url: string) => {
     if (/^https?:/i.test(url)) void shell.openExternal(url)
   })
