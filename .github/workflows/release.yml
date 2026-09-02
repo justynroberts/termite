@@ -56,6 +56,9 @@ jobs:
         # releaseType is forced on the command line as well as in package.json:
         # backfilling an older tag checks out that tag's manifest, which predates
         # the setting, and without it electron-builder silently drops every file.
+        # bash, not the runner's default PowerShell: it splits
+        # `-c.publish.releaseType=release` and reads the tail as a config file path.
+        shell: bash
         run: npx electron-builder --win -c.publish.releaseType=release --publish ${{ (startsWith(github.ref, 'refs/tags/') || inputs.tag) && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
