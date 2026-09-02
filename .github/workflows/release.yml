@@ -53,7 +53,10 @@ jobs:
       # the feed electron-updater reads on Windows. Without it the updater finds
       # the newest release, finds no manifest, and fails silently.
       - name: Package and publish
-        run: npx electron-builder --win --publish ${{ (startsWith(github.ref, 'refs/tags/') || inputs.tag) && 'always' || 'never' }}
+        # releaseType is forced on the command line as well as in package.json:
+        # backfilling an older tag checks out that tag's manifest, which predates
+        # the setting, and without it electron-builder silently drops every file.
+        run: npx electron-builder --win -c.publish.releaseType=release --publish ${{ (startsWith(github.ref, 'refs/tags/') || inputs.tag) && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
