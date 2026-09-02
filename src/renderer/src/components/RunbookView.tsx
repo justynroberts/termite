@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useApp, type RunHostState, type Tab } from '../state'
 import { runTranscript } from '../runContext'
-import { IconChevronDown, IconChevronUp, IconX } from '../icons'
+import { IconChevronDown, IconChevronUp, IconTerminal, IconX } from '../icons'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: '· waiting',
@@ -12,8 +12,8 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: '✗ cancelled'
 }
 
-export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JSX.Element {
-  const { runs, cancelRun, hosts, askAI, setAiSubject } = useApp()
+export default function RunbookView({ tab, visible }: { tab: Tab; visible: boolean }): JSX.Element {
+  const { runs, cancelRun, hosts, askAI, setAiSubject, openTerminal } = useApp()
   const run = tab.runId ? runs[tab.runId] : undefined
 
   if (!run) return <div className="runbook-view empty">Run not found (it may predate an app restart).</div>
@@ -30,6 +30,10 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
   // drawer is useful when opened directly rather than only through the buttons
   // above. Built lazily — a run transcript is not cheap to assemble.
   useEffect(() => {
+    // Only the visible tab speaks: a runbook tab left open in the background
+    // stays mounted and would otherwise keep overwriting whatever the screen
+    // you are actually looking at has published.
+    if (!visible) return
     setAiSubject({
       label: `run · ${run.runbookName}`,
       kind: 'explain-run',
@@ -40,8 +44,10 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
         { label: 'Is the fleet consistent?', prompt: 'Did this run leave the fleet in a consistent state, or did it apply to some hosts and not others?' }
       ]
     })
-    return () => setAiSubject(null)
-  }, [run, setAiSubject])
+    // Deliberately no cleanup. Leaving the run for a terminal is how remediation
+    // starts, and dropping the context at exactly that moment is the opposite of
+    // useful — the subject stays until something else claims it or it is dismissed.
+  }, [run, visible, setAiSubject])
 
   return (
     <div className="runbook-view">
@@ -115,7 +121,15 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
             {step.error && <div className="run-step-error">{step.error}</div>}
             <div className="run-hosts">
               {step.hosts.map((h) => (
-                <HostOutput key={h.hostId} host={h} label={hostLabel(h.hostId)} />
+                <HostOutput
+                  key={h.hostId}
+                  host={h}
+                  label={hostLabel(h.hostId)}
+                  onOpenTerminal={() => {
+                    const target = hosts.find((candidate) => candidate.id === h.hostId)
+                    if (target) openTerminal(target)
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -125,7 +139,15 @@ export default function RunbookView({ tab }: { tab: Tab; visible: boolean }): JS
   )
 }
 
-function HostOutput({ host, label }: { host: RunHostState; label: string }): JSX.Element {
+function HostOutput({
+  host,
+  label,
+  onOpenTerminal
+}: {
+  host: RunHostState
+  label: string
+  onOpenTerminal: () => void
+}): JSX.Element {
   const [open, setOpen] = useState(true)
   const preRef = useRef<HTMLPreElement>(null)
   const stick = useRef(true)
@@ -138,14 +160,26 @@ function HostOutput({ host, label }: { host: RunHostState; label: string }): JSX
 
   return (
     <div className={`run-host ${host.status}`}>
-      <button className="run-host-header" onClick={() => setOpen((o) => !o)}>
-        {open ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
-        <span className="run-host-label">{label}</span>
-        <span className={`run-badge ${host.status}`}>
-          {STATUS_LABEL[host.status]}
-          {host.exitCode !== undefined && host.status === 'failed' ? ` (exit ${host.exitCode})` : ''}
-        </span>
-      </button>
+      <div className="run-host-bar">
+        <button className="run-host-header" onClick={() => setOpen((o) => !o)}>
+          {open ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
+          <span className="run-host-label">{label}</span>
+          <span className={`run-badge ${host.status}`}>
+            {STATUS_LABEL[host.status]}
+            {host.exitCode !== undefined && host.status === 'failed' ? ` (exit ${host.exitCode})` : ''}
+          </span>
+        </button>
+        <button
+          className="run-host-open"
+          title={`Open a terminal on ${label}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenTerminal()
+          }}
+        >
+          <IconTerminal size={13} /> Terminal
+        </button>
+      </div>
       {open && (
         <pre
           ref={preRef}

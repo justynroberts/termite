@@ -960,11 +960,36 @@ code.inline { font-family: var(--font-mono); background: var(--bg-0); padding: 1
 }
 
 .chip-subject {
-  cursor: default;
+  cursor: pointer;
   border-style: dashed;
   color: var(--accent);
   background: var(--accent-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
+.chip-subject:hover { border-style: solid; }
+
+/* The host row's collapse toggle and its remediation action sit side by side;
+   the toggle cannot contain the action, since a button may not nest. */
+.run-host-bar { display: flex; align-items: stretch; gap: 6px; }
+.run-host-bar .run-host-header { flex: 1; min-width: 0; }
+.run-host-open {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+}
+.run-host-open:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
 .audit-tabs { display: flex; gap: 2px; margin: 0 0 10px; }
 .audit-tab {

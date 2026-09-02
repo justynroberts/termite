@@ -25,9 +25,16 @@ function isPotentiallyDestructive(command: string): boolean {
 }
 
 export default function AIDrawer(): JSX.Element {
-  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId, aiSeed, clearAiSeed, aiSubject } = useApp()
+  const { setAiOpen, activeSessionId, sendToActiveTerminal, settings, toast, setView, tabs, activeTabId, aiSeed, clearAiSeed, aiSubject, setAiSubject } = useApp()
   const activeTab = tabs.find((tab) => tab.id === activeTabId)
-  const memoryKey = activeTab?.kind === 'terminal' ? `host:${activeTab.hostId}` : 'general'
+  // Keyed on the subject when there is one, so the conversation about a run
+  // survives switching to a terminal to act on it — which is the whole point of
+  // having asked. Falls back to per-host memory for ordinary terminal chat.
+  const memoryKey = aiSubject
+    ? `subject:${aiSubject.label}`
+    : activeTab?.kind === 'terminal'
+      ? `host:${activeTab.hostId}`
+      : 'general'
   const memoryKeyRef = useRef(memoryKey)
   const [messages, setMessages] = useState<Msg[]>(() => hostMemories.get(memoryKey) ?? [])
   const [input, setInput] = useState('')
@@ -205,9 +212,13 @@ export default function AIDrawer(): JSX.Element {
         <div className="ai-quick-actions">
           {subject ? (
             <>
-              <span className="chip chip-subject" title="What these actions will look at">
-                {subject.label}
-              </span>
+              <button
+                className="chip chip-subject"
+                title="Stop using this as context and go back to the focused terminal"
+                onClick={() => setAiSubject(null)}
+              >
+                {subject.label} <IconX size={10} />
+              </button>
               {subject.actions.map((action) => (
                 <button
                   key={action.label}

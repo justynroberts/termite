@@ -77,9 +77,11 @@ export default function AuditPanel(): JSX.Element {
         actions: [{ label: 'Explain this event', prompt: 'Explain this audit event in plain language, and whether it is worth attention.' }]
       })
     } else {
+      // Closing the detail here is deliberate, so the subject goes with it.
       setAiSubject(null)
     }
-    return () => setAiSubject(null)
+    // No unmount cleanup: leaving this page for a terminal should keep whatever
+    // was open as the thing the AI is talking about.
   }, [openSession, selected, transcript, setAiSubject])
 
   return (
