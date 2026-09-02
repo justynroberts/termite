@@ -1,26 +1,39 @@
-name: Build & Release
+name: Build & Release (Windows)
+
+# Windows only, on purpose.
+#
+# macOS releases are cut locally with `npm run package:mac:signed`, because
+# signing needs a Developer ID certificate and a stored notarytool profile and a
+# GitHub runner has neither. A macOS job here would build unsigned artifacts and,
+# on a tag, publish them straight over the signed ones — which is exactly what
+# used to happen, and why every 0.9.x tag run had to be cancelled by hand, and
+# why Windows went four releases without a build.
+#
+# So this workflow builds and publishes Windows, and nothing else. A tag push
+# adds the installers and latest.yml to the release the macOS build already
+# created, without touching it.
 
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and attach Windows artifacts to'
+        required: false
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            args: --win
-          - os: macos-latest
-            args: --mac
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_dispatch with a tag backfills a release that was cut for
+          # macOS first; without it this builds whatever the default branch has.
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -36,20 +49,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Package (and publish on tag)
-        run: npx electron-builder ${{ matrix.args }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+      # `--publish always` uploads the installers and, importantly, latest.yml —
+      # the feed electron-updater reads on Windows. Without it the updater finds
+      # the newest release, finds no manifest, and fails silently.
+      - name: Package and publish
+        run: npx electron-builder --win --publish ${{ (startsWith(github.ref, 'refs/tags/') || inputs.tag) && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS: builds are unsigned unless you add cert secrets;
-          # users open the app once via right-click → Open.
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: termite-${{ matrix.os }}
-          path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
+          name: termite-windows
+          path: dist/*.exe
           if-no-files-found: warn
