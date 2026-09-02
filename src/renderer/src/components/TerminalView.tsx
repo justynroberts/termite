@@ -62,6 +62,7 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const copyRef = useRef<() => void>(() => undefined)
   const pasteRef = useRef<(submit?: boolean) => void>(() => undefined)
   const searchRef = useRef<() => void>(() => undefined)
+  const webglRef = useRef<WebglAddon | null>(null)
   const [selectionLength, setSelectionLength] = useState(0)
   const [authUrl, setAuthUrl] = useState('')
   const { settings, hosts, updatePane, setActivePane, closePane, broadcastTerminalInput, toast } = useApp()
@@ -99,8 +100,12 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     const attachRenderer = (): void => {
       try {
         const webgl = new WebglAddon()
-        webgl.onContextLoss(() => webgl.dispose())
+        webgl.onContextLoss(() => {
+          webglRef.current = null
+          webgl.dispose()
+        })
         term.loadAddon(webgl)
+        webglRef.current = webgl
       } catch {
         // No WebGL available; the DOM renderer still works.
       }
@@ -367,21 +372,57 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   // refit when visible / resized (split layout changes trigger the observer)
   useEffect(() => {
     if (!visible) return
-    const doFit = (): void => {
+    let frame = 0
+    let settle: ReturnType<typeof setTimeout> | undefined
+
+    const applyFit = (): void => {
+      frame = 0
       try {
         fitRef.current?.fit()
       } catch {
         /* container may be zero-sized mid-transition */
       }
+      // The WebGL renderer caches rendered glyphs in a texture atlas sized to
+      // the old cell dimensions. Resizing invalidates it, and the stale atlas is
+      // what shows up as smeared or doubled characters after a drag. Clearing it
+      // forces the glyphs to be re-rasterised at the new size — done once the
+      // drag settles rather than on every frame, since it throws away the cache.
+      clearTimeout(settle)
+      settle = setTimeout(() => {
+        try {
+          webglRef.current?.clearTextureAtlas()
+        } catch {
+          /* renderer disposed or context lost */
+        }
+      }, 120)
     }
-    doFit()
+
+    // A ResizeObserver fires many times per frame while a window is dragged.
+    // Refitting on each one thrashes the canvas; coalescing to one per frame is
+    // both cheaper and what stops the renderer falling behind its own geometry.
+    const doFit = (): void => {
+      if (frame) return
+      frame = requestAnimationFrame(applyFit)
+    }
+
+    applyFit()
     if (active) termRef.current?.focus()
     window.addEventListener('resize', doFit)
     const observer = new ResizeObserver(doFit)
     if (containerRef.current) observer.observe(containerRef.current)
+
+    // Moving the window to a display with a different pixel density invalidates
+    // the atlas exactly as a resize does, without changing the element's size.
+    const dpr = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+    const onDpr = (): void => applyFit()
+    dpr.addEventListener('change', onDpr)
+
     return () => {
+      if (frame) cancelAnimationFrame(frame)
+      clearTimeout(settle)
       window.removeEventListener('resize', doFit)
       observer.disconnect()
+      dpr.removeEventListener('change', onDpr)
     }
   }, [visible, active])
 
@@ -395,6 +436,12 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
     term.options.cursorBlink = settings.cursorBlink
     term.options.theme = themedBackground(settings.terminalTheme).theme
     fitRef.current?.fit()
+    // A different font, size or theme means every cached glyph is wrong.
+    try {
+      webglRef.current?.clearTextureAtlas()
+    } catch {
+      /* renderer disposed or context lost */
+    }
   }, [settings.fontSize, settings.fontFamily, settings.cursorStyle, settings.cursorBlink, settings.terminalTheme, settings.windowEffect])
 
   const termBg = themedBackground(settings.terminalTheme).bg

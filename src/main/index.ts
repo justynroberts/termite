@@ -82,7 +82,7 @@ function createWindow(): void {
    * quickly enough that the splash is a flash rather than a screen, which reads
    * as a glitch; the extra beat lets it actually be seen.
    */
-  const SPLASH_LINGER = 2000
+  const SPLASH_LINGER = 4000
 
   mainWindow.on('ready-to-show', () => {
     setTimeout(() => {
