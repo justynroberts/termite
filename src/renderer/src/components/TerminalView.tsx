@@ -8,6 +8,22 @@ import { useApp, type Tab, type TermPane } from '../state'
 import { getTerminalTheme } from '../themes'
 import { IconCopy, IconExternalLink, IconPaste, IconSearch, IconX } from '../icons'
 
+/**
+ * Reduce a URL as it appears on screen to the link it actually is.
+ *
+ * The same login URL routinely shows up twice in the scrollback in different
+ * shapes: printed plainly by the program, and echoed back by the shell with its
+ * punctuation backslash-escaped. Treating those as two links made dismissing one
+ * pointless — the other was offered on the next byte of output, which is what
+ * made `/login` loop. Escaping also has to come off before the link is opened,
+ * since a browser handed `authorize\?device\=X` gets a URL that does not work.
+ *
+ * Trailing punctuation goes too: prose tends to end a sentence after a link.
+ */
+function normaliseAuthUrl(raw: string): string {
+  return raw.replace(/\\(?=[?&=;:,.#])/g, '').replace(/[),.;]+$/, '')
+}
+
 /** #rrggbb → rgba(...) with alpha, for glass mode */
 function withAlpha(hex: string | undefined, alpha: number): string {
   if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return hex ?? '#0d1117'
@@ -63,6 +79,16 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
   const pasteRef = useRef<(submit?: boolean) => void>(() => undefined)
   const searchRef = useRef<() => void>(() => undefined)
   const webglRef = useRef<WebglAddon | null>(null)
+  /**
+   * Login URLs already dealt with — dismissed, or submitted against.
+   *
+   * The scan reads the last 80 rendered rows, and a URL stays in those rows long
+   * after it has been used. Without this, dismissing the banner cleared it for
+   * exactly as long as it took the next byte of output to arrive, and the paste
+   * that completes a login re-triggered the scan on its own echo: the banner came
+   * straight back, which is what made `/login` unusable.
+   */
+  const handledAuthUrls = useRef<Set<string>>(new Set())
   const [selectionLength, setSelectionLength] = useState(0)
   const [authUrl, setAuthUrl] = useState('')
   const { settings, hosts, updatePane, setActivePane, closePane, broadcastTerminalInput, toast } = useApp()
@@ -295,8 +321,11 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           }
           if (paragraph) paragraphs.push(paragraph)
           const urls = paragraphs.flatMap((text) => text.match(/https?:\/\/[^\s"'`<>]+/g) ?? [])
-          const candidate = [...urls].reverse().find((url) => /oauth|authorize|login|device/i.test(url))
-          if (candidate) setAuthUrl(candidate.replace(/[),.;]+$/, ''))
+          const candidate = [...urls]
+            .reverse()
+            .map(normaliseAuthUrl)
+            .find((url) => /oauth|authorize|login|device/i.test(url) && !handledAuthUrls.current.has(url))
+          if (candidate) setAuthUrl(candidate)
         }
 
         // Deferred rather than run per chunk. Rebuilding 80 rows of the buffer on
@@ -485,11 +514,22 @@ export default function TerminalPane({ tab, pane, visible, active, showActiveRin
           <button
             className="btn"
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => pasteRef.current(true)}
+            onClick={() => {
+              handledAuthUrls.current.add(authUrl)
+              pasteRef.current(true)
+              setAuthUrl('')
+            }}
           >
             <IconPaste size={14} /> Paste &amp; submit
           </button>
-          <button className="icon-btn" title="Dismiss" onClick={() => setAuthUrl('')}>
+          <button
+            className="icon-btn"
+            title="Dismiss"
+            onClick={() => {
+              handledAuthUrls.current.add(authUrl)
+              setAuthUrl('')
+            }}
+          >
             <IconX size={13} />
           </button>
         </div>
